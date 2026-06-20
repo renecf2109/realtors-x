@@ -44,24 +44,19 @@ jobs:
             exit 1
           fi
 
+      - name: Show safe migration diagnostics
+        shell: bash
+        run: |
+          echo "Supabase CLI version: $(supabase --version)"
+          echo "Project ref: $SUPABASE_PROJECT_REF"
+          echo "Migration files found:"
+          find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort
+
       - name: Link production project
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
 
-      - name: Register existing production baseline
-        shell: bash
-        run: |
-          set +e
-          output=$(supabase migration repair --status applied 20260620180000 2>&1)
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            message=$(printf '%s' "$output" | tr '\n' ' ' | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
-            echo "::error title=Supabase baseline registration failed::$message"
-            exit "$status"
-          fi
-          printf '%s\n' "$output"
-
       - name: Preview pending migrations
-        run: supabase db push --linked --dry-run
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD" --dry-run
 
       - name: Apply pending migrations
-        run: supabase db push --linked
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
