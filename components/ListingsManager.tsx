@@ -95,9 +95,16 @@ function AIListingModal({ property, onClose, onSave }: { property: Property | nu
   const [error, setError] = useState("");
   const missing = missingFields(draft);
 
-  function analyze() {
+  async function analyze() {
     if (!description.trim()) { setError("Paste the property description first."); return; }
-    setError(""); setDraft(parseListingDescription(description)); setStep("review");
+    setBusy(true); setError("");
+    try {
+      const response = await fetch("/api/listings/parse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ description }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      setDraft(result.draft); setStep("review");
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "The description could not be analyzed."); }
+    finally { setBusy(false); }
   }
 
   async function importFile(file: File) {
@@ -138,7 +145,7 @@ function AIListingModal({ property, onClose, onSave }: { property: Property | nu
     <div className="mx-auto my-3 max-w-4xl rounded-3xl bg-cream p-5 shadow-soft sm:p-8">
       <div className="flex justify-between gap-4"><div><p className="flex items-center gap-2 text-sm font-semibold text-sage"><Sparkles size={16}/> Realtors X AI Listing Studio</p><h2 className="mt-1 text-2xl font-black">{property ? "Improve this listing" : step === "start" ? "How would you like to add it?" : "Review before publishing"}</h2></div><button onClick={onClose} aria-label="Close"><X/></button></div>
       {step === "start" ? <div className="mt-7 grid gap-5 md:grid-cols-2">
-        <div className="rounded-3xl border border-sage/25 bg-white p-6"><Sparkles className="text-sage"/><h3 className="mt-4 text-xl font-bold">Describe one property</h3><p className="mt-2 text-sm leading-6 text-ink/55">Paste everything you know in any order. AI extracts the listing and asks for missing details.</p><textarea className="field mt-5 min-h-44" value={description} onChange={event => setDescription(event.target.value)} placeholder="Beautiful 2-bedroom apartment in Hamra for $1,800, 1,200 sq ft, with parking and balcony…"/><button className="btn mt-4 w-full gap-2" onClick={analyze}><Sparkles size={16}/> Build my listing</button></div>
+        <div className="rounded-3xl border border-sage/25 bg-white p-6"><Sparkles className="text-sage"/><h3 className="mt-4 text-xl font-bold">Describe one property</h3><p className="mt-2 text-sm leading-6 text-ink/55">Paste everything you know in any order. AI extracts the listing and asks for missing details.</p><textarea className="field mt-5 min-h-44" value={description} onChange={event => setDescription(event.target.value)} placeholder="Beautiful 2-bedroom apartment in Hamra for $1,800, 1,200 sq ft, with parking and balcony…"/><button className="btn mt-4 w-full gap-2" onClick={analyze} disabled={busy}><Sparkles size={16}/> {busy ? "Analyzing…" : "Build my listing"}</button></div>
         <label className="cursor-pointer rounded-3xl border border-dashed border-ink/20 bg-white p-6 transition hover:border-sage"><FileSpreadsheet className="text-sage"/><h3 className="mt-4 text-xl font-bold">Import a file</h3><p className="mt-2 text-sm leading-6 text-ink/55">Upload Excel, CSV, JSON, or text. Every row becomes a listing review.</p><div className="mt-8 rounded-2xl bg-lime p-5 text-center text-sm font-bold text-sage"><Upload className="mx-auto mb-2"/>Choose a file</div><input type="file" accept=".xlsx,.xls,.csv,.json,.txt" className="hidden" onChange={event => event.target.files?.[0] && importFile(event.target.files[0])}/></label>
       </div> : <form onSubmit={publish} className="mt-7">
         {queue.length > 0 && <p className="mb-4 rounded-2xl bg-lime p-4 text-sm font-semibold text-sage">Spreadsheet listing {queue.length === 1 ? "final item" : `— ${queue.length} items remaining`}</p>}
