@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Property } from "@/lib/types";
 
 export default async function ProjectsPage() {
-  const { data } = await (await createClient()).from("properties").select("*").eq("availability", "available").not("project_name", "is", null).order("created_at", { ascending: false });
+  const { data } = await (await createClient()).from("public_properties").select("*").not("project_name", "is", null).order("created_at", { ascending: false });
   const grouped = new Map<string, Property[]>();
   for (const property of (data ?? []) as Property[]) if (property.project_name) grouped.set(property.project_name, [...(grouped.get(property.project_name) ?? []), property]);
   return <main className="mx-auto max-w-7xl px-6 py-14"><div className="max-w-3xl"><p className="text-sm font-bold uppercase tracking-[.18em] text-sage">Developments</p><h1 className="mt-3 text-5xl font-black tracking-tight">Explore projects, project by project.</h1><p className="mt-5 text-lg leading-8 text-ink/55">See every available unit, gallery, investment detail, and completion timeline in one place.</p></div>

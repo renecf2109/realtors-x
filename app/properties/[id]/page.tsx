@@ -6,7 +6,7 @@ import type { Property } from "@/lib/types";
 
 export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data } = await (await createClient()).from("properties").select("*").eq("id", id).eq("availability", "available").single();
+  const { data } = await (await createClient()).from("public_properties").select("*").eq("id", id).single();
   if (!data) notFound();
   const property = data as Property;
   return <main className="mx-auto max-w-7xl px-6 py-12">

@@ -82,3 +82,49 @@ begin
 end; $$;
 
 grant execute on function public.resolve_lead_route(uuid[]) to anon, authenticated;
+
+-- Public clients read only this safe view. Developer names are returned only when
+-- an agent explicitly enables show_developer_to_public on that listing.
+create or replace view public.public_properties with (security_barrier = true) as
+select
+  id, title, price, location, bedrooms, bathrooms, size, type, description,
+  features, images, project_name, investment_opportunity, expected_roi,
+  completion_date,
+  case when show_developer_to_public then developer_name else null end as developer_name,
+  show_developer_to_public, availability, created_at, updated_at
+from public.properties
+where availability = 'available';
+
+revoke select on public.properties from anon;
+grant select on public.public_properties to anon, authenticated;
+grant select, insert, update, delete on public.properties to authenticated;
+
+-- Always identify the admin even before their WhatsApp number is configured.
+create or replace function public.resolve_lead_route(p_property_ids uuid[])
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_agent_ids uuid[];
+  v_target_id uuid;
+  v_phone text;
+  v_route text;
+begin
+  select array_agg(distinct agent_id) into v_agent_ids
+  from public.properties where id = any(coalesce(p_property_ids, '{}'));
+
+  if cardinality(v_agent_ids) = 1 then
+    v_target_id := v_agent_ids[1];
+    select whatsapp_phone into v_phone from public.profiles where id = v_target_id;
+    v_route := 'listing_agent';
+  end if;
+
+  if v_phone is null or cardinality(v_agent_ids) <> 1 then
+    select id, whatsapp_phone into v_target_id, v_phone
+    from public.profiles where role = 'admin'
+    order by created_at asc limit 1;
+    v_route := 'admin';
+  end if;
+
+  return jsonb_build_object('agent_id', v_target_id, 'phone', v_phone, 'route', v_route);
+end; $$;
+
+grant execute on function public.resolve_lead_route(uuid[]) to anon, authenticated;

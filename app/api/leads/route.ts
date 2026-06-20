@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     if (!Number.isFinite(payload.budget) || payload.budget < 0) return NextResponse.json({ error: "Please enter a valid budget." }, { status: 400 });
     const { error } = await supabase.from("leads").insert(payload);
     if (error) throw error;
-    const { data: selected } = propertyIds.length ? await supabase.from("properties").select("id,title,price").in("id", propertyIds) : { data: [] };
+    const { data: selected } = propertyIds.length ? await supabase.from("public_properties").select("id,title,price").in("id", propertyIds) : { data: [] };
     const listingLines = (selected ?? []).map(property => `• ${property.title} — $${Number(property.price).toLocaleString()} — https://realtors-x.vercel.app/properties/${property.id}`);
     const message = [
       "New Realtors X lead", `Name: ${payload.name}`, `Phone: ${payload.phone}`,

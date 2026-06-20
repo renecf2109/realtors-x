@@ -8,7 +8,7 @@ export async function POST(request:Request){
     const {message}=await request.json();
     if(typeof message!=="string"||message.trim().length<2)return NextResponse.json({error:"Please describe what you are looking for."},{status:400});
     const supabase=await createClient();
-    const {data,error}=await supabase.from("properties").select("*").eq("availability","available");
+    const {data,error}=await supabase.from("public_properties").select("*");
     if(error)throw error;
     const intent=parseSearch(message);
     const matches=rankProperties((data??[]) as Property[],intent);

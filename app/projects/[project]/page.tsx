@@ -7,7 +7,7 @@ import type { Property } from "@/lib/types";
 export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
   const { project } = await params;
   const name = decodeURIComponent(project);
-  const { data } = await (await createClient()).from("properties").select("*").eq("availability", "available").eq("project_name", name).order("price");
+  const { data } = await (await createClient()).from("public_properties").select("*").eq("project_name", name).order("price");
   const properties = (data ?? []) as Property[];
   if (!properties.length) notFound();
   const roi = Math.max(...properties.map(item => Number(item.expected_roi ?? 0)));

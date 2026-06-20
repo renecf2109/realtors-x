@@ -71,3 +71,44 @@ create index if not exists properties_location_idx on public.properties(lower(lo
 create index if not exists properties_project_name_idx on public.properties(project_name);
 create index if not exists properties_investment_idx on public.properties(investment_opportunity) where investment_opportunity = true;
 create index if not exists leads_created_at_idx on public.leads(created_at desc);
+
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, email) values (new.id, new.email)
+  on conflict (id) do nothing;
+  return new;
+end; $$;
+
+create trigger on_auth_user_created after insert on auth.users
+for each row execute function public.handle_new_user();
+
+create or replace function public.resolve_lead_route(p_property_ids uuid[])
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_agent_ids uuid[]; v_target_id uuid; v_phone text; v_route text;
+begin
+  select array_agg(distinct agent_id) into v_agent_ids from public.properties where id = any(coalesce(p_property_ids, '{}'));
+  if cardinality(v_agent_ids) = 1 then
+    v_target_id := v_agent_ids[1];
+    select whatsapp_phone into v_phone from public.profiles where id = v_target_id;
+    v_route := 'listing_agent';
+  end if;
+  if v_phone is null or cardinality(v_agent_ids) <> 1 then
+    select id, whatsapp_phone into v_target_id, v_phone from public.profiles where role = 'admin' order by created_at asc limit 1;
+    v_route := 'admin';
+  end if;
+  return jsonb_build_object('agent_id', v_target_id, 'phone', v_phone, 'route', v_route);
+end; $$;
+
+grant execute on function public.resolve_lead_route(uuid[]) to anon, authenticated;
+
+create or replace view public.public_properties with (security_barrier = true) as
+select id, title, price, location, bedrooms, bathrooms, size, type, description,
+features, images, project_name, investment_opportunity, expected_roi, completion_date,
+case when show_developer_to_public then developer_name else null end as developer_name,
+show_developer_to_public, availability, created_at, updated_at
+from public.properties where availability = 'available';
+
+revoke select on public.properties from anon;
+grant select on public.public_properties to anon, authenticated;
+grant select, insert, update, delete on public.properties to authenticated;
