@@ -40,7 +40,7 @@ jobs:
         run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
 
       - name: Register existing production baseline
-        run: supabase migration repair --linked --status applied 20260620180000
+        run: supabase migration repair --status applied 20260620180000
 
       - name: Preview pending migrations
         run: supabase db push --linked --dry-run
