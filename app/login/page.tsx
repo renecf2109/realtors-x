@@ -14,23 +14,26 @@ export default function LoginPage() {
   const router = useRouter();
 
   async function login(e: React.FormEvent) {
-    e.preventDefault(); setLoading(true); setError("");
-    const { error } = await createClient().auth.signInWithPassword({ email, password });
-    if (error) { setError(error.message); setLoading(false); return; }
-    router.push("/dashboard"); router.refresh();
+    e.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) { setError("Enter your email and password."); return; }
+    setLoading(true); setError("");
+    const { error } = await createClient().auth.signInWithPassword({ email: normalizedEmail, password });
+    if (error) { setError(error.message === "Invalid login credentials" ? "The email or password is incorrect." : error.message); setLoading(false); return; }
+    router.replace("/dashboard"); router.refresh();
   }
 
-  return <main className="mx-auto flex min-h-[75vh] max-w-md items-center px-6 py-16">
-    <form onSubmit={login} className="card w-full p-8">
-      <Image src="/logo.png" alt="Realtors X logo" width={2048} height={772} className="mb-7 h-auto w-44" priority/>
-      <p className="text-xs font-bold uppercase tracking-widest text-sage">Agent portal</p>
+  return <main className="mx-auto flex min-h-[76vh] max-w-md items-center px-5 py-12 sm:px-6 sm:py-16">
+    <form onSubmit={login} className="card w-full p-6 sm:p-8" noValidate>
+      <Image src="/logo.png" alt="Realtors X logo" width={2048} height={772} className="mb-7 h-auto w-40 sm:w-44" priority/>
+      <p className="eyebrow">Agent portal</p>
       <h1 className="mt-3 text-3xl font-black">Welcome back</h1>
-      <p className="mt-2 text-sm text-ink/55">Sign in with your agent account.</p>
-      <label className="mt-7 block text-sm font-semibold">Email<input className="field mt-2" type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label>
-      <label className="mt-4 block text-sm font-semibold">Password<input className="field mt-2" type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>
-      {error && <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      <p className="mt-2 text-sm leading-6 text-ink/55">Sign in to manage listings, leads, and private inventory.</p>
+      <label className="mt-7 block text-sm font-semibold">Email address<input className="field mt-2" type="email" inputMode="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} disabled={loading} required/></label>
+      <label className="mt-4 block text-sm font-semibold">Password<input className="field mt-2" type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} disabled={loading} required/></label>
+      <div aria-live="polite">{error && <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}</div>
       <button className="btn mt-6 w-full" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
-      <p className="mt-5 text-center text-xs text-ink/45">New to Realtors X? <Link href="/signup" className="font-bold text-sage hover:underline">Create an account</Link></p>
+      <p className="mt-5 text-center text-sm text-ink/50">New to Realtors X? <Link href="/signup" className="font-bold text-sage hover:underline">Create an account</Link></p>
     </form>
   </main>;
 }

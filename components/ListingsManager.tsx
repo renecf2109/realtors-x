@@ -13,14 +13,18 @@ export function ListingsManager({ initialProperties, currentUserId }: { initialP
   const [items, setItems] = useState(initialProperties.map(item => ({ ...item, images: item.images ?? [], project_name: item.project_name ?? null, investment_opportunity: item.investment_opportunity ?? false, expected_roi: item.expected_roi ?? null, completion_date: item.completion_date ?? null, developer_name: item.developer_name ?? null, show_developer_to_public: item.show_developer_to_public ?? false })));
   const [editing, setEditing] = useState<Property | null>(null);
   const [open, setOpen] = useState(false);
+  const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const supabase = createClient();
 
   function showCreate() { setEditing(null); setOpen(true); }
 
   async function remove(id: string) {
     if (!confirm("Delete this listing?")) return;
+    setNotice(null);
     const { error } = await supabase.from("properties").delete().eq("id", id);
-    if (!error) setItems(value => value.filter(item => item.id !== id));
+    if (error) { setNotice({ type: "error", text: error.message || "The listing could not be deleted." }); return; }
+    setItems(value => value.filter(item => item.id !== id));
+    setNotice({ type: "success", text: "Listing deleted." });
   }
 
   async function uploadGallery(propertyId: string, existing: string[], files: File[]) {
@@ -59,6 +63,7 @@ export function ListingsManager({ initialProperties, currentUserId }: { initialP
         }
         setItems(value => [completed, ...value]);
       }
+      setNotice({ type: "success", text: editing ? "Listing updated." : "Listing published." });
       return { ok: true as const };
     } catch (error) {
       return { ok: false as const, message: error instanceof Error ? error.message : "The listing could not be saved." };
@@ -70,6 +75,7 @@ export function ListingsManager({ initialProperties, currentUserId }: { initialP
       <div><p className="text-sm font-semibold text-sage">AI inventory</p><h1 className="mt-1 text-4xl font-black">Property listings</h1></div>
       <button className="btn gap-2" onClick={showCreate}><Sparkles size={17}/> Create with AI</button>
     </div>
+    <div aria-live="polite">{notice && <p className={`mt-5 rounded-2xl border p-4 text-sm ${notice.type === "success" ? "border-blue-200 bg-lime text-sage" : "border-red-200 bg-red-50 text-red-700"}`}>{notice.text}</p>}</div>
     <div className="mt-8 grid gap-4 md:grid-cols-2">{items.map(property => <article key={property.id} className="card overflow-hidden">
       {property.images?.[0] && <div className="relative aspect-[16/9] bg-cream"><Image src={property.images[0]} alt={`${property.title} gallery image`} fill unoptimized className="object-cover"/></div>}
       <div className="p-6"><div className="flex justify-between gap-4"><div><span className="rounded-full bg-lime px-3 py-1 text-xs font-bold capitalize text-sage">{property.availability}</span><h2 className="mt-4 text-xl font-bold">{property.title}</h2><p className="mt-1 text-sm text-ink/50">{property.location}</p></div><p className="text-lg font-black">${Number(property.price).toLocaleString()}</p></div>

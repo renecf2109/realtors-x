@@ -1,17 +1,28 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LayoutDashboard, Building2, Search } from "lucide-react";
 import { LogoutButton } from "./LogoutButton";
 import { BrandLogo } from "./BrandLogo";
 
+const links = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/listings", label: "Listings", icon: Building2 },
+  { href: "/agent-search", label: "Inventory search", icon: Search }
+];
+
 export function DashboardNav() {
-  return <aside className="rounded-3xl bg-ink p-5 text-white lg:min-h-[calc(100vh-9rem)]">
-    <div className="rounded-2xl bg-white px-3 py-3"><BrandLogo className="h-auto w-full max-w-40"/></div>
-    <p className="mt-5 px-3 text-xs font-bold uppercase tracking-[.18em] text-white/45">Agent workspace</p>
-    <nav className="mt-7 space-y-2">
-      <Link href="/dashboard" className="flex items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/10"><LayoutDashboard size={18}/> Dashboard</Link>
-      <Link href="/listings" className="flex items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/10"><Building2 size={18}/> Listings</Link>
-      <Link href="/agent-search" className="flex items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/10"><Search size={18}/> Inventory search</Link>
+  const pathname = usePathname();
+  return <aside className="rounded-3xl bg-ink p-3 text-white sm:p-4 lg:min-h-[calc(100vh-9rem)] lg:p-5">
+    <div className="flex items-center justify-between gap-4 lg:block">
+      <div className="rounded-2xl bg-white px-3 py-2.5"><BrandLogo className="h-auto w-28 sm:w-36"/></div>
+      <div className="lg:hidden"><LogoutButton/></div>
+    </div>
+    <p className="mt-5 hidden px-3 text-xs font-bold uppercase tracking-[.18em] text-white/45 lg:block">Agent workspace</p>
+    <nav aria-label="Agent workspace" className="mt-3 grid grid-cols-3 gap-1 lg:mt-7 lg:block lg:space-y-2">
+      {links.map(link => { const Icon = link.icon; const active = pathname === link.href; return <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-[11px] font-semibold transition sm:text-xs lg:min-h-0 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-3 lg:text-left lg:text-sm ${active ? "bg-sage text-white" : "text-white/70 hover:bg-white/10 hover:text-white"}`}><Icon size={18}/><span>{link.label}</span></Link>; })}
     </nav>
-    <div className="mt-10 border-t border-white/10 px-3 pt-5"><LogoutButton/></div>
+    <div className="mt-10 hidden border-t border-white/10 px-3 pt-5 lg:block"><LogoutButton/></div>
   </aside>;
 }

@@ -3,12 +3,21 @@
 @tailwind utilities;
 
 * { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body { color: #090a0c; background: #f5f7fa; }
+::selection { background: #d9effc; color: #090a0c; }
 input, textarea, select { outline: none; }
 input:focus, textarea:focus, select:focus { border-color: #168bd2; box-shadow: 0 0 0 3px rgba(22,139,210,.14); }
+a:focus-visible, button:focus-visible { outline: 3px solid rgba(22,139,210,.35); outline-offset: 3px; }
 @layer components {
-  .btn { @apply inline-flex items-center justify-center rounded-full bg-sage px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0874b7] disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-secondary { @apply inline-flex items-center justify-center rounded-full border border-ink/15 bg-white px-5 py-3 text-sm font-semibold transition hover:border-sage hover:text-sage; }
-  .field { @apply w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-sm; }
+  .btn { @apply inline-flex min-h-11 items-center justify-center rounded-full bg-sage px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#0874b7] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0; }
+  .btn-secondary { @apply inline-flex min-h-11 items-center justify-center rounded-full border border-ink/15 bg-white px-5 py-3 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-sage hover:text-sage; }
+  .field { @apply w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-base transition placeholder:text-ink/35 sm:text-sm; }
   .card { @apply rounded-3xl border border-ink/10 bg-white shadow-soft; }
+  .eyebrow { @apply text-xs font-bold uppercase tracking-[.18em] text-sage; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

@@ -1,29 +1,32 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { BrandLogo } from "@/components/BrandLogo";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Realtors X",
-  description: "Realtors X application for AI-powered real estate property matching, listings, and lead management."
+  metadataBase: new URL("https://realtors-x.vercel.app"),
+  title: { default: "Realtors X | AI-Powered Real Estate", template: "%s | Realtors X" },
+  description: "Discover properties, curated projects, and real estate investment opportunities with Realtors X AI-powered matching.",
+  applicationName: "Realtors X",
+  keywords: ["real estate", "property search", "real estate investment", "property listings", "Realtors X"],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website", url: "/", siteName: "Realtors X", title: "Realtors X | AI-Powered Real Estate",
+    description: "Luxury property discovery, curated projects, and AI-powered real estate matching.",
+    images: [{ url: "/logo.png", width: 2048, height: 772, alt: "Realtors X logo" }]
+  },
+  twitter: { card: "summary_large_image", title: "Realtors X | AI-Powered Real Estate", description: "Luxury property discovery and AI-powered matching.", images: ["/logo.png"] },
+  robots: { index: true, follow: true }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
-        <header className="border-b border-ink/10 bg-white/90 backdrop-blur">
-          <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-            <BrandLogo className="h-8 w-auto sm:h-10" priority/>
-            <div className="flex items-center gap-3">
-              <Link href="/investments" className="hidden text-sm font-semibold hover:text-sage sm:inline">Investments</Link>
-              <Link href="/projects" className="hidden text-sm font-semibold hover:text-sage sm:inline">Projects</Link>
-              <Link href="/chat" className="text-sm font-semibold hover:text-sage">Find a home</Link>
-              <Link href="/login" className="btn-secondary !px-4 !py-2">Agent login</Link>
-            </div>
-          </nav>
-        </header>
-        {children}
+        <a href="#main-content" className="sr-only z-50 rounded-lg bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
+        <SiteHeader/>
+        <div id="main-content">{children}</div>
+        <SiteFooter/>
       </body>
     </html>
   );
