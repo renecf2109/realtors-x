@@ -11,6 +11,10 @@ export type Property = {
   description: string;
   features: string[];
   images: string[];
+  project_name: string | null;
+  investment_opportunity: boolean;
+  expected_roi: number | null;
+  completion_date: string | null;
   availability: "available" | "reserved" | "sold" | "rented";
   created_at: string;
 };

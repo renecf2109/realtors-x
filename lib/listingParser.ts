@@ -26,6 +26,10 @@ export function parseListingDescription(text: string): ListingDraft {
     ?? normalized.match(/\b(?:located|situated)\s+(?:in|at)\s+([^.;\n]+)/i)?.[1]?.trim()
     ?? normalized.match(/\b(?:in|at)\s+([A-Z][A-Za-zÀ-ÿ' -]+(?:,\s*[A-Z][A-Za-zÀ-ÿ' -]+)?)(?:[.;\n]|\s+(?:with|for|featuring))/)?.[1]?.trim();
   const explicitTitle = labeled("title|property name");
+  const projectName = labeled("project|project name|development")
+    ?? normalized.match(/\b(?:part of|within|at)\s+(?:the\s+)?([A-Z][A-Za-z0-9' -]+)\s+(?:project|development)/)?.[1]?.trim();
+  const roiMatch = lower.match(/(?:roi|return(?: on investment)?|yield)\s*(?:of|is|:|-)?\s*(\d+(?:\.\d+)?)\s*%/i);
+  const completionDate = labeled("completion|delivery|handover") ?? null;
   const availability = (["available", "reserved", "sold", "rented"] as const).find(value => lower.includes(value)) ?? "available";
   const features = featureDictionary.filter(feature => lower.includes(feature));
   const price = priceMatch ? cleanNumber(priceMatch[1]) : undefined;
@@ -36,7 +40,13 @@ export function parseListingDescription(text: string): ListingDraft {
     ? `${bedrooms !== undefined && bedrooms > 0 ? `${bedrooms}-Bedroom ` : ""}${titleCase(propertyType)} in ${location}`
     : undefined);
 
-  return { title, price, location, bedrooms, bathrooms, size, type: propertyType, description: normalized, features, images: [], availability };
+  return {
+    title, price, location, bedrooms, bathrooms, size, type: propertyType, description: normalized,
+    features, images: [], availability, project_name: projectName ?? null,
+    investment_opportunity: /\b(?:investment|investor|roi|yield|return on investment)\b/i.test(lower),
+    expected_roi: roiMatch ? Number(roiMatch[1]) : null,
+    completion_date: completionDate
+  };
 }
 
 export function missingFields(draft: ListingDraft): string[] {
@@ -74,6 +84,10 @@ export function parseSpreadsheetRow(row: Record<string, unknown>): ListingDraft 
     features: featuresValue ? String(featuresValue).split(/[,;|]/).map(item => item.trim()).filter(Boolean) : parsed.features,
     images: imagesValue ? String(imagesValue).split(/[,;|]/).map(item => item.trim()).filter(item => item.startsWith("http")) : [],
     availability: (String(valueFor(row, ["availability", "status"]) ?? parsed.availability).toLowerCase() as PropertyInput["availability"])
+    ,project_name: String(valueFor(row, ["project", "project name", "development"]) ?? parsed.project_name ?? "") || null
+    ,investment_opportunity: ["yes", "true", "1", "investment"].includes(String(valueFor(row, ["investment", "investment opportunity", "for investors"]) ?? parsed.investment_opportunity).toLowerCase())
+    ,expected_roi: Number(valueFor(row, ["roi", "expected roi", "yield", "return"]) ?? parsed.expected_roi) || null
+    ,completion_date: String(valueFor(row, ["completion", "completion date", "delivery", "handover"]) ?? parsed.completion_date ?? "") || null
   };
   if (!Number.isFinite(direct.bedrooms)) direct.bedrooms = undefined;
   if (!Number.isFinite(direct.bathrooms)) direct.bathrooms = undefined;

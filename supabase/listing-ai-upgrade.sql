@@ -1,5 +1,12 @@
 -- Run once in Supabase SQL Editor to enable property galleries.
 alter table public.properties add column if not exists images text[] not null default '{}';
+alter table public.properties add column if not exists project_name text;
+alter table public.properties add column if not exists investment_opportunity boolean not null default false;
+alter table public.properties add column if not exists expected_roi numeric(5,2);
+alter table public.properties add column if not exists completion_date text;
+
+create index if not exists properties_project_name_idx on public.properties(project_name);
+create index if not exists properties_investment_idx on public.properties(investment_opportunity) where investment_opportunity = true;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('property-images', 'property-images', true, 10485760, array['image/jpeg','image/png','image/webp','image/gif'])

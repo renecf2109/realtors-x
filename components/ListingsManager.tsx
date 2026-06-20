@@ -10,7 +10,7 @@ import type { Property, PropertyInput } from "@/lib/types";
 const blankDraft: ListingDraft = { description: "", features: [], images: [], availability: "available" };
 
 export function ListingsManager({ initialProperties }: { initialProperties: Property[] }) {
-  const [items, setItems] = useState(initialProperties.map(item => ({ ...item, images: item.images ?? [] })));
+  const [items, setItems] = useState(initialProperties.map(item => ({ ...item, images: item.images ?? [], project_name: item.project_name ?? null, investment_opportunity: item.investment_opportunity ?? false, expected_roi: item.expected_roi ?? null, completion_date: item.completion_date ?? null })));
   const [editing, setEditing] = useState<Property | null>(null);
   const [open, setOpen] = useState(false);
   const supabase = createClient();
@@ -73,6 +73,7 @@ export function ListingsManager({ initialProperties }: { initialProperties: Prop
     <div className="mt-8 grid gap-4 md:grid-cols-2">{items.map(property => <article key={property.id} className="card overflow-hidden">
       {property.images?.[0] && <div className="relative aspect-[16/9] bg-cream"><Image src={property.images[0]} alt={`${property.title} gallery image`} fill unoptimized className="object-cover"/></div>}
       <div className="p-6"><div className="flex justify-between gap-4"><div><span className="rounded-full bg-lime px-3 py-1 text-xs font-bold capitalize text-sage">{property.availability}</span><h2 className="mt-4 text-xl font-bold">{property.title}</h2><p className="mt-1 text-sm text-ink/50">{property.location}</p></div><p className="text-lg font-black">${Number(property.price).toLocaleString()}</p></div>
+      {(property.project_name || property.investment_opportunity) && <div className="mt-4 flex flex-wrap gap-2">{property.project_name && <span className="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">{property.project_name}</span>}{property.investment_opportunity && <span className="rounded-full bg-sage px-3 py-1 text-xs font-semibold text-white">Investment{property.expected_roi ? ` · ${property.expected_roi}% ROI` : ""}</span>}</div>}
       <p className="mt-5 text-sm text-ink/60">{property.bedrooms} bd · {property.bathrooms} ba · {Number(property.size).toLocaleString()} sq ft · <span className="capitalize">{property.type}</span></p>
       {property.features.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{property.features.slice(0, 5).map(feature => <span key={feature} className="rounded-full bg-cream px-3 py-1 text-xs">{feature}</span>)}</div>}
       {property.images?.length > 0 && <p className="mt-4 flex items-center gap-2 text-xs text-ink/45"><Images size={14}/>{property.images.length} gallery photo{property.images.length === 1 ? "" : "s"}</p>}
@@ -153,6 +154,10 @@ function AIListingModal({ property, onClose, onSave }: { property: Property | nu
           <Field label="Availability"><select className="field" value={draft.availability ?? "available"} onChange={e => update("availability", e.target.value as PropertyInput["availability"])}><option>available</option><option>reserved</option><option>sold</option><option>rented</option></select></Field>
           <div className="sm:col-span-2"><Field label="Description"><textarea className="field min-h-28" value={draft.description} onChange={e => update("description", e.target.value)}/></Field></div>
           <div className="sm:col-span-2"><Field label="Features detected automatically"><input className="field" value={draft.features.join(", ")} onChange={e => update("features", e.target.value.split(",").map(value => value.trim()).filter(Boolean))} placeholder="parking, balcony, elevator"/></Field></div>
+          <Field label="Project name (optional)"><input className="field" value={draft.project_name ?? ""} onChange={e => update("project_name", e.target.value || null)} placeholder="Realtors X Waterfront"/></Field>
+          <Field label="Completion / handover (optional)"><input className="field" value={draft.completion_date ?? ""} onChange={e => update("completion_date", e.target.value || null)} placeholder="Q4 2027"/></Field>
+          <label className="flex items-center gap-3 rounded-2xl border border-ink/10 bg-white p-4 text-sm font-semibold"><input type="checkbox" className="h-5 w-5 accent-sage" checked={draft.investment_opportunity ?? false} onChange={e => update("investment_opportunity", e.target.checked)}/><span>Show on Investments page</span></label>
+          <Field label="Expected ROI % (optional)"><input className="field" type="number" min="0" step="0.1" value={draft.expected_roi ?? ""} onChange={e => update("expected_roi", e.target.value ? Number(e.target.value) : null)}/></Field>
           <div className="sm:col-span-2"><label className="block rounded-2xl border border-dashed border-ink/20 bg-white p-5 text-sm font-semibold transition hover:border-sage"><span className="flex items-center gap-2"><Images size={18} className="text-sage"/>Property gallery</span><span className="mt-1 block text-xs font-normal text-ink/50">Choose multiple photos. Existing image URLs from spreadsheets are also kept.</span><input className="mt-4 block w-full text-sm" type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files ?? []))}/></label>{((draft.images?.length ?? 0) + files.length) > 0 && <p className="mt-2 text-xs text-sage">{(draft.images?.length ?? 0) + files.length} gallery image(s) ready</p>}</div>
         </div>
         {error && <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}

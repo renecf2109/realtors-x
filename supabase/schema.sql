@@ -14,6 +14,10 @@ create table if not exists public.properties (
   description text not null default '',
   features text[] not null default '{}',
   images text[] not null default '{}',
+  project_name text,
+  investment_opportunity boolean not null default false,
+  expected_roi numeric(5,2) check (expected_roi is null or expected_roi >= 0),
+  completion_date text,
   availability text not null default 'available' check (availability in ('available','reserved','sold','rented')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -47,4 +51,6 @@ create trigger properties_set_updated_at before update on public.properties for 
 create index if not exists properties_agent_id_idx on public.properties(agent_id);
 create index if not exists properties_availability_idx on public.properties(availability);
 create index if not exists properties_location_idx on public.properties(lower(location));
+create index if not exists properties_project_name_idx on public.properties(project_name);
+create index if not exists properties_investment_idx on public.properties(investment_opportunity) where investment_opportunity = true;
 create index if not exists leads_created_at_idx on public.leads(created_at desc);
