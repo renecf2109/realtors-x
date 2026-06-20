@@ -75,3 +75,13 @@ supabase/         Database schema and optional demo data
 - Add rate limiting and CAPTCHA to `/api/leads` before running paid traffic.
 - Add property images using a Supabase Storage bucket.
 - Run `npm run build` before deployment. Vercel can deploy the app directly; add both environment variables in the Vercel project settings.
+
+## Automatic Supabase migrations
+
+Database migrations in `supabase/migrations/` are automatically applied to the linked production project when they are pushed to `main`. The GitHub repository must contain these Actions secrets:
+
+- `SUPABASE_PROJECT_REF`
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
+
+The workflow first performs a dry run and only then applies pending migrations. Existing SQL files outside `supabase/migrations/` are retained as setup and upgrade references; only timestamped migration files are applied automatically.

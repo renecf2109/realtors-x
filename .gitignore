@@ -4,6 +4,7 @@ out
 coverage
 work/
 .vercel
+supabase/.temp/
 .env
 .env.local
 .env.*.local
