@@ -10,6 +10,9 @@ A clean Next.js and Supabase starter for real estate agents. Agents can manage l
 - Public natural-language property search
 - Explainable matching by budget, location, bedrooms, bathrooms, type, and features
 - Buyer lead capture and lead dashboard
+- AI-assisted listing creation from natural-language descriptions
+- Excel, CSV, JSON, and text bulk listing imports
+- Multi-photo property galleries using Supabase Storage
 - Supabase Row Level Security (RLS)
 - Responsive Tailwind UI
 

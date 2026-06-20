@@ -13,6 +13,7 @@ create table if not exists public.properties (
   type text not null,
   description text not null default '',
   features text[] not null default '{}',
+  images text[] not null default '{}',
   availability text not null default 'available' check (availability in ('available','reserved','sold','rented')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

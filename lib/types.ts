@@ -10,6 +10,7 @@ export type Property = {
   type: string;
   description: string;
   features: string[];
+  images: string[];
   availability: "available" | "reserved" | "sold" | "rented";
   created_at: string;
 };
