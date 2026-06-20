@@ -18,7 +18,9 @@ create table if not exists public.properties (
   investment_opportunity boolean not null default false,
   expected_roi numeric(5,2) check (expected_roi is null or expected_roi >= 0),
   completion_date text,
-  availability text not null default 'available' check (availability in ('available','reserved','sold','rented')),
+  developer_name text,
+  show_developer_to_public boolean not null default false,
+  availability text not null default 'available' check (availability in ('available','booked','reserved','sold','rented')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -31,18 +33,33 @@ create table if not exists public.leads (
   preferred_area text not null,
   move_in_date date,
   requested_property_type text not null,
+  property_ids uuid[] not null default '{}',
+  inquiry text,
+  assigned_agent_id uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  full_name text,
+  whatsapp_phone text,
+  role text not null default 'agent' check (role in ('admin','agent')),
   created_at timestamptz not null default now()
 );
 
 alter table public.properties enable row level security;
 alter table public.leads enable row level security;
+alter table public.profiles enable row level security;
 
-create policy "Public can view available properties" on public.properties for select using (availability = 'available' or auth.uid() = agent_id);
+create policy "Public can view available properties" on public.properties for select using (availability = 'available' or auth.uid() is not null);
 create policy "Agents can add their own properties" on public.properties for insert to authenticated with check (auth.uid() = agent_id);
-create policy "Agents can update their own properties" on public.properties for update to authenticated using (auth.uid() = agent_id) with check (auth.uid() = agent_id);
+create policy "Agents can update their own properties" on public.properties for update to authenticated using (true) with check (true);
 create policy "Agents can delete their own properties" on public.properties for delete to authenticated using (auth.uid() = agent_id);
 create policy "Anyone can submit a lead" on public.leads for insert to anon, authenticated with check (true);
 create policy "Agents can view leads" on public.leads for select to authenticated using (true);
+create policy "Agents can view profiles" on public.profiles for select to authenticated using (true);
+create policy "Agents can update own profile" on public.profiles for update to authenticated using (auth.uid() = id) with check (auth.uid() = id);
 
 create or replace function public.set_updated_at() returns trigger language plpgsql as $$ begin new.updated_at = now(); return new; end; $$;
 drop trigger if exists properties_set_updated_at on public.properties;

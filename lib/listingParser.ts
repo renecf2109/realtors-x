@@ -24,12 +24,13 @@ export function parseListingDescription(text: string): ListingDraft {
   const propertyType = types.find(type => new RegExp(`\\b${type}\\b`, "i").test(lower));
   const location = labeled("location|area|address")
     ?? normalized.match(/\b(?:located|situated)\s+(?:in|at)\s+([^.;\n]+?)(?=\s+(?:with|featuring|for)\b|[.;\n]|$)/i)?.[1]?.trim()
-    ?? normalized.match(/\b(?:in|at)\s+([A-Z][A-Za-zÀ-ÿ' -]+(?:,\s*[A-Z][A-Za-zÀ-ÿ' -]+)?)(?:[.;\n]|\s+(?:with|for|featuring))/)?.[1]?.trim();
+    ?? normalized.match(/\b(?:in|at)\s+([^.;\n]+?)(?=\s+(?:with|for|featuring|under)\b|[.;\n]|$)/i)?.[1]?.trim();
   const explicitTitle = labeled("title|property name");
   const projectName = labeled("project|project name|development")
     ?? normalized.match(/\b(?:part of|within|at)\s+(?:the\s+)?([A-Z][A-Za-z0-9' -]+)\s+(?:project|development)/)?.[1]?.trim();
   const roiMatch = lower.match(/(?:roi|return(?: on investment)?|yield)\s*(?:of|is|:|-)?\s*(\d+(?:\.\d+)?)\s*%/i);
   const completionDate = labeled("completion|delivery|handover") ?? null;
+  const developerName = labeled("developer|developer name|developed by") ?? null;
   const availability = (["available", "reserved", "sold", "rented"] as const).find(value => lower.includes(value)) ?? "available";
   const features = featureDictionary.filter(feature => lower.includes(feature));
   const price = priceMatch ? cleanNumber(priceMatch[1]) : undefined;
@@ -45,7 +46,9 @@ export function parseListingDescription(text: string): ListingDraft {
     features, images: [], availability, project_name: projectName ?? null,
     investment_opportunity: /\b(?:investment|investor|roi|yield|return on investment)\b/i.test(lower),
     expected_roi: roiMatch ? Number(roiMatch[1]) : null,
-    completion_date: completionDate
+    completion_date: completionDate,
+    developer_name: developerName,
+    show_developer_to_public: false
   };
 }
 
@@ -88,6 +91,8 @@ export function parseSpreadsheetRow(row: Record<string, unknown>): ListingDraft 
     ,investment_opportunity: ["yes", "true", "1", "investment"].includes(String(valueFor(row, ["investment", "investment opportunity", "for investors"]) ?? parsed.investment_opportunity).toLowerCase())
     ,expected_roi: Number(valueFor(row, ["roi", "expected roi", "yield", "return"]) ?? parsed.expected_roi) || null
     ,completion_date: String(valueFor(row, ["completion", "completion date", "delivery", "handover"]) ?? parsed.completion_date ?? "") || null
+    ,developer_name: String(valueFor(row, ["developer", "developer name", "developed by"]) ?? parsed.developer_name ?? "") || null
+    ,show_developer_to_public: ["yes", "true", "1", "public"].includes(String(valueFor(row, ["show developer", "developer public", "public developer"]) ?? false).toLowerCase())
   };
   if (!Number.isFinite(direct.bedrooms)) direct.bedrooms = undefined;
   if (!Number.isFinite(direct.bathrooms)) direct.bathrooms = undefined;

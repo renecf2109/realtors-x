@@ -8,6 +8,6 @@ export default async function ListingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data } = await supabase.from("properties").select("*").eq("agent_id", user.id).order("created_at", { ascending: false });
-  return <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[240px_1fr]"><DashboardNav/><ListingsManager initialProperties={(data ?? []) as Property[]}/></main>;
+  const { data } = await supabase.from("properties").select("*").order("created_at", { ascending: false });
+  return <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[240px_1fr]"><DashboardNav/><ListingsManager initialProperties={(data ?? []) as Property[]} currentUserId={user.id}/></main>;
 }

@@ -13,6 +13,12 @@ export async function POST(request:Request){
     const intent=parseSearch(message);
     const matches=rankProperties((data??[]) as Property[],intent);
     const reply=matches.length?`I found ${matches.length} ${matches.length===1?"listing":"listings"} that ${matches.length===1?"looks":"look"} promising. ${Object.keys(intent).filter(k=>k!=="features"&&intent[k as keyof typeof intent]!==undefined).length===0&&intent.features.length===0?"For sharper matches, tell me your budget, area, bedrooms, or property type.":"I ranked them by the details you shared."}`:"I couldn't find a close match among the available listings. Try widening the area or budget, or leave your details and an agent can help.";
-    return NextResponse.json({reply,intent,matches:matches.map(m=>({...m.property,matchReasons:m.reasons}))});
+    return NextResponse.json({reply,intent,matches:matches.map(m=>({
+      ...m.property,
+      developer_name: m.property.show_developer_to_public ? m.property.developer_name : null,
+      show_developer_to_public: Boolean(m.property.show_developer_to_public),
+      agent_id: undefined,
+      matchReasons:m.reasons
+    }))});
   } catch { return NextResponse.json({error:"I couldn't search the listings just now. Please try again."},{status:500}); }
 }

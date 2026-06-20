@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Building2 } from "lucide-react";
+import { LayoutDashboard, Building2, Search } from "lucide-react";
 import { LogoutButton } from "./LogoutButton";
 import { BrandLogo } from "./BrandLogo";
 
@@ -10,6 +10,7 @@ export function DashboardNav() {
     <nav className="mt-7 space-y-2">
       <Link href="/dashboard" className="flex items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/10"><LayoutDashboard size={18}/> Dashboard</Link>
       <Link href="/listings" className="flex items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/10"><Building2 size={18}/> Listings</Link>
+      <Link href="/agent-search" className="flex items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/10"><Search size={18}/> Inventory search</Link>
     </nav>
     <div className="mt-10 border-t border-white/10 px-3 pt-5"><LogoutButton/></div>
   </aside>;

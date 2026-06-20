@@ -38,4 +38,12 @@ Available now.`);
     expect(draft.price).toBe(900000);
     expect(draft.features).toEqual(expect.arrayContaining(["pool", "parking"]));
   });
+
+  it("separates a location from following features and asks only for missing data", () => {
+    const draft = parseListingDescription("Apartment in Hamra with balcony.");
+    expect(draft.location).toBe("Hamra");
+    expect(draft.title).toBe("Apartment in Hamra");
+    expect(draft.features).toContain("balcony");
+    expect(missingFields(draft)).toEqual(["price", "bedrooms", "bathrooms", "size"]);
+  });
 });
