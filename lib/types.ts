@@ -44,3 +44,26 @@ export type AgentProfile = {
 };
 
 export type PropertyInput = Omit<Property, "id" | "agent_id" | "created_at">;
+
+export type FeaturedMediaType = "image" | "video";
+export type FeaturedMediaPlacement = "homepage_hero" | "homepage_strip" | "gallery" | "dashboard" | "listing_featured";
+
+export type FeaturedMedia = {
+  id: string;
+  title: string;
+  description: string;
+  media_type: FeaturedMediaType;
+  media_url: string;
+  thumbnail_url: string | null;
+  placement: FeaturedMediaPlacement;
+  link_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type FeaturedMediaInput = Omit<FeaturedMedia, "id" | "created_by" | "created_at" | "updated_at">;

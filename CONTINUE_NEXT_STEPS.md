@@ -69,6 +69,110 @@ Unless a future prompt explicitly authorizes it:
 - Do not change the passing GitHub Actions migration workflow unless a migration task requires it.
 - Preserve the Realtors X logo, favicon, metadata, black/white/blue design, public pages, and agent workflows.
 
+## Admin featured media addition
+
+The website now includes a secure featured-media administration area:
+
+- Admin home: `/admin`
+- Featured media management: `/admin/featured-media`
+- Supabase migration: `supabase/migrations/20260621100000_admin_featured_media.sql`
+- Admin access uses the existing `profiles.role` field.
+- Unauthenticated visitors are redirected to login.
+- Authenticated non-admin agents are redirected to their dashboard.
+- Featured-media create, update, and delete operations are independently protected by Supabase Row Level Security.
+- Public visitors can read only active media within its optional start/end schedule.
+- Agent accounts cannot promote themselves by updating their profile through the website API.
+- No service-role key is used by the website.
+
+Admin feature verification completed before deployment:
+
+```text
+npm run test                    - passed, 11 tests
+npm run lint -- --max-warnings=0 - passed
+npx tsc --noEmit                - passed
+npm run build                   - passed, 21 routes generated
+```
+
+Public route smoke tests passed, both signed-out admin routes redirect to login with a safe return path, the chat API remained healthy, and `robots.txt` excludes the admin area. Authenticated admin CRUD and non-admin role behavior must receive a final live check after the migration is applied and the account role is configured.
+
+Featured media supports:
+
+- Image and video URLs
+- Video thumbnail/poster URLs
+- Title and description
+- Optional destination link
+- Sort order
+- Active/inactive status
+- Optional start and end times
+- Placements: `homepage_hero`, `homepage_strip`, `gallery`, `dashboard`, and `listing_featured`
+- Preview before saving
+- Edit, activate/deactivate, and delete actions
+
+Website display behavior:
+
+- `homepage_hero` provides the image or muted, looping, inline video background in the homepage hero card.
+- `homepage_strip` creates a featured media section on the homepage.
+- `gallery` can add images or controlled videos to property and project galleries.
+- `dashboard` displays featured project media in the authenticated agent dashboard.
+- `listing_featured` displays on a specific property when its destination link is `/properties/PROPERTY_ID`.
+- Autoplay background video is disabled when the visitor requests reduced motion.
+- Video files and large images remain outside Git; the database stores HTTPS URLs only.
+
+### Make your account an admin
+
+1. Create or sign in to your Realtors X account and confirm its email address.
+2. Open the Supabase project dashboard.
+3. Click **SQL Editor** in the left sidebar.
+4. Click **New query**.
+5. Paste the SQL below.
+6. Replace `YOUR_LOGIN_EMAIL@example.com` with the exact email used to log into Realtors X.
+7. Click **Run**.
+8. Sign out of Realtors X and sign in again. The **Admin** option will appear in the agent workspace.
+
+```sql
+update public.profiles as profile
+set role = 'admin'
+from auth.users as account
+where profile.id = account.id
+  and lower(account.email) = lower('YOUR_LOGIN_EMAIL@example.com');
+
+select account.email, profile.role
+from auth.users as account
+join public.profiles as profile on profile.id = account.id
+where lower(account.email) = lower('YOUR_LOGIN_EMAIL@example.com');
+```
+
+The final result should show the email with role `admin`. Do not use a password, access token, database password, or service-role key in this query.
+
+### Add images or videos
+
+1. Sign in to the website with the admin account.
+2. Open `/admin`, then click **Open featured media**.
+3. Click **Add featured media**.
+4. Choose **Image** or **Video**.
+5. Enter a public HTTPS media URL. Do not add large files to GitHub.
+6. For video, add a public HTTPS poster/thumbnail URL when possible.
+7. Choose the placement and sort order.
+8. Optionally add a destination link and start/end schedule.
+9. Confirm the preview, choose whether it is active, and save.
+10. Use **Edit**, **Activate/Deactivate**, or **Delete** from the media library as needed.
+
+For `listing_featured`, set the destination link to the exact property path, such as `/properties/PROPERTY_ID`. For project-specific gallery media, use the matching project path, such as `/projects/PROJECT-NAME`.
+
+### Live admin checklist
+
+- Confirm a signed-out visitor opening `/admin` is redirected to login.
+- Confirm a normal agent opening `/admin` is redirected to `/dashboard`.
+- Confirm the admin account can open `/admin` and `/admin/featured-media`.
+- Add one inactive image and confirm it does not appear publicly.
+- Activate the image and confirm it appears in its selected placement.
+- Add a video with a poster and confirm preview, controls, and reduced-motion behavior.
+- Edit its title, description, URLs, placement, sort order, and schedule.
+- Deactivate it and confirm it disappears publicly.
+- Delete the test media after verification if it is not intended for production.
+
+Future mobile note: a later mobile app can read the same public active `featured_media` records and placement values. No mobile application has been started, and the repository has not been restructured.
+
 ## Recommended next phase options
 
 ### 1. Add real listing data - recommended first

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ArrowRight, Bot, Building2, CheckCircle2, FolderKanban, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { FeaturedMediaAsset } from "@/components/FeaturedMediaAsset";
+import { FeaturedMediaStrip } from "@/components/FeaturedMediaStrip";
+import { getActiveFeaturedMedia } from "@/lib/featuredMediaServer";
 
 const steps = [
   ["Describe", "Tell the assistant where, how, and when you want to live."],
@@ -8,7 +11,10 @@ const steps = [
   ["Connect", "Shortlist the right options and continue with a real agent."]
 ];
 
-export default function Home() {
+export default async function Home() {
+  const featuredMedia = await getActiveFeaturedMedia(["homepage_hero", "homepage_strip"]);
+  const heroMedia = featuredMedia.find(item => item.placement === "homepage_hero");
+  const stripMedia = featuredMedia.filter(item => item.placement === "homepage_strip");
   return <main>
     <section className="relative overflow-hidden bg-white">
       <div className="absolute inset-y-0 right-0 hidden w-[42%] bg-ink lg:block" aria-hidden="true"/>
@@ -28,16 +34,19 @@ export default function Home() {
           </div>
         </div>
         <div className="relative rounded-[2.25rem] bg-ink p-7 text-white shadow-soft sm:p-10 lg:p-12">
-          <div className="absolute -right-3 -top-3 rounded-2xl bg-sage p-4 text-white sm:-right-5 sm:-top-5"><Bot size={28}/></div>
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-white/50">Try asking</p>
-          <p className="mt-5 text-2xl font-semibold leading-snug sm:text-3xl">“I need a modern sea-view apartment in Beirut under $450,000, with parking and a balcony.”</p>
+          {heroMedia ? <><div className="absolute inset-0 overflow-hidden rounded-[2.25rem]"><FeaturedMediaAsset item={heroMedia} background priority/><div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/75 to-ink/35"/></div></> : null}
+          <div className="absolute -right-3 -top-3 z-20 rounded-2xl bg-sage p-4 text-white sm:-right-5 sm:-top-5"><Bot size={28}/></div>
+          <div className="relative z-10"><p className="text-xs font-bold uppercase tracking-[.18em] text-white/60">{heroMedia ? heroMedia.title : "Try asking"}</p>
+          <p className="mt-5 text-2xl font-semibold leading-snug sm:text-3xl">{heroMedia?.description || "I need a modern sea-view apartment in Beirut under $450,000, with parking and a balcony."}</p>
           <div className="mt-10 grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><Building2 className="mb-3 text-[#46b4f5]"/><b>Live inventory</b><p className="mt-1 text-sm text-white/55">Current availability</p></div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><ShieldCheck className="mb-3 text-[#46b4f5]"/><b>Trusted follow-up</b><p className="mt-1 text-sm text-white/55">Real local agents</p></div>
-          </div>
+          </div></div>
         </div>
       </div>
     </section>
+
+    <FeaturedMediaStrip items={stripMedia} title="Featured properties and projects"/>
 
     <section className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
       <div className="max-w-2xl"><p className="eyebrow">One search, three paths</p><h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Explore the market your way.</h2></div>

@@ -8,6 +8,6 @@ export default async function ListingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data } = await supabase.from("properties").select("*").order("created_at", { ascending: false });
-  return <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[240px_1fr]"><DashboardNav/><ListingsManager initialProperties={(data ?? []) as Property[]} currentUserId={user.id}/></main>;
+  const [{ data }, { data: profile }] = await Promise.all([supabase.from("properties").select("*").order("created_at", { ascending: false }), supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()]);
+  return <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[240px_1fr]"><DashboardNav isAdmin={profile?.role === "admin"}/><ListingsManager initialProperties={(data ?? []) as Property[]} currentUserId={user.id}/></main>;
 }

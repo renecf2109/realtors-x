@@ -5,25 +5,29 @@ import type { Lead } from "@/lib/types";
 import type { AgentProfile } from "@/lib/types";
 import { AgentProfileCard } from "@/components/AgentProfileCard";
 import { LeadWhatsAppButton } from "@/components/LeadWhatsAppButton";
+import { FeaturedMediaStrip } from "@/components/FeaturedMediaStrip";
+import { getActiveFeaturedMedia } from "@/lib/featuredMediaServer";
 
 export default async function Dashboard() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const [{ data: leads }, { count: listingCount }, { data: profile }] = await Promise.all([
+  const [{ data: leads }, { count: listingCount }, { data: profile }, dashboardMedia] = await Promise.all([
     supabase.from("leads").select("*").order("created_at", { ascending: false }),
     supabase.from("properties").select("*", { count: "exact", head: true }),
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle()
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    getActiveFeaturedMedia(["dashboard"])
   ]);
   const typedLeads = (leads ?? []) as Lead[];
   return <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[240px_1fr]">
-    <DashboardNav/>
+    <DashboardNav isAdmin={(profile as AgentProfile | null)?.role === "admin"}/>
     <section>
       <p className="text-sm font-semibold text-sage">Good to see you</p><h1 className="mt-1 text-4xl font-black">Your dashboard</h1>
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <Stat label="Total leads" value={typedLeads.length}/><Stat label="Active listings" value={listingCount ?? 0}/><Stat label="New this week" value={typedLeads.filter(l=>Date.now()-new Date(l.created_at).getTime()<604800000).length}/>
       </div>
       <AgentProfileCard profile={(profile as AgentProfile | null) ?? null}/>
+      {dashboardMedia.length ? <div className="mt-6 overflow-hidden rounded-3xl"><FeaturedMediaStrip items={dashboardMedia} title="Featured project media" dark/></div> : null}
       <div className="card mt-6 overflow-hidden">
         <div className="border-b border-ink/10 p-6"><h2 className="text-xl font-bold">Buyer leads</h2><p className="text-sm text-ink/50">People who asked to hear from an agent.</p></div>
         {typedLeads.length === 0 ? <p className="p-8 text-center text-ink/50">No leads yet. Share the public chat page to get started.</p> :

@@ -20,7 +20,8 @@ export default function LoginPage() {
     setLoading(true); setError("");
     const { error } = await createClient().auth.signInWithPassword({ email: normalizedEmail, password });
     if (error) { setError(error.message === "Invalid login credentials" ? "The email or password is incorrect." : error.message); setLoading(false); return; }
-    router.replace("/dashboard"); router.refresh();
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.replace(next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard"); router.refresh();
   }
 
   return <main className="mx-auto flex min-h-[76vh] max-w-md items-center px-5 py-12 sm:px-6 sm:py-16">
