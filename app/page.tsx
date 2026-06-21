@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { BrandLogo } from "@/components/BrandLogo";
-import { ArrowRight, Bot, Building2, CheckCircle2, FolderKanban, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, CheckCircle2, FolderKanban, Sparkles, TrendingUp } from "lucide-react";
 import { FeaturedMediaAsset } from "@/components/FeaturedMediaAsset";
 import { FeaturedMediaStrip } from "@/components/FeaturedMediaStrip";
 import { getActiveFeaturedMedia } from "@/lib/featuredMediaServer";
@@ -15,38 +14,32 @@ export default async function Home() {
   const featuredMedia = await getActiveFeaturedMedia(["homepage_hero", "homepage_strip"]);
   const heroMedia = featuredMedia.find(item => item.placement === "homepage_hero");
   const stripMedia = featuredMedia.filter(item => item.placement === "homepage_strip");
+  const logoPreview = heroMedia?.media_url.endsWith("/logo.png");
+
   return <main>
-    <section className="relative overflow-hidden bg-white">
-      <div className="absolute inset-y-0 right-0 hidden w-[42%] bg-ink lg:block" aria-hidden="true"/>
-      <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-6 py-16 sm:py-20 lg:grid-cols-2 lg:py-28">
-        <div>
-          <BrandLogo className="mb-8 h-auto w-44 sm:w-56"/>
-          <p className="eyebrow">AI-powered property matching</p>
-          <h1 className="mt-5 max-w-2xl text-5xl font-black leading-[.96] tracking-[-.045em] sm:text-6xl lg:text-7xl">The right property, without the noise.</h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-ink/60">Describe what matters in your own words. Realtors X searches current listings, explains the strongest matches, and connects you with an agent.</p>
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link href="/chat" className="btn gap-2">Start your property search <ArrowRight size={17}/></Link>
-            <Link href="/projects" className="btn-secondary">Explore projects</Link>
+    <section className="relative flex min-h-[calc(100svh-4rem)] items-end overflow-hidden bg-ink text-white">
+      {heroMedia ? <div className="absolute inset-0 bg-white"><FeaturedMediaAsset item={heroMedia} background priority fit={logoPreview ? "contain" : "cover"} className={logoPreview ? "bg-white p-8 sm:p-16 lg:p-24" : ""}/></div> : <div className="absolute inset-0 bg-gradient-to-br from-ink via-[#081d2b] to-sage"/>}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10"/>
+      <div className="relative z-10 w-full border-t border-white/20 bg-black/30 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-12 lg:py-14">
+          <div className="max-w-4xl">
+            <h1 className="text-4xl font-black leading-[.95] tracking-[-.045em] sm:text-6xl lg:text-7xl">The right property, without the noise.</h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8">{heroMedia?.description || "Describe what matters in your own words. Realtors X searches current listings, explains the strongest matches, and connects you with an agent."}</p>
           </div>
-          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink/55">
-            <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-sage"/>Natural-language search</span>
-            <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-sage"/>Direct agent follow-up</span>
+          <div className="mt-7 inline-flex w-full flex-col gap-2 rounded-[1.75rem] border border-white/20 bg-white/10 p-2 shadow-2xl backdrop-blur-xl sm:w-auto sm:flex-row sm:rounded-full">
+            <Link href="/chat" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-ink transition hover:bg-lime">Start your property search <ArrowRight size={17}/></Link>
+            <Link href="/projects" className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 bg-black/15 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/20">Explore projects</Link>
+            <Link href="/investments" className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 bg-black/15 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/20">View investments</Link>
           </div>
-        </div>
-        <div className="relative rounded-[2.25rem] bg-ink p-7 text-white shadow-soft sm:p-10 lg:p-12">
-          {heroMedia ? <><div className="absolute inset-0 overflow-hidden rounded-[2.25rem]"><FeaturedMediaAsset item={heroMedia} background priority/><div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/75 to-ink/35"/></div></> : null}
-          <div className="absolute -right-3 -top-3 z-20 rounded-2xl bg-sage p-4 text-white sm:-right-5 sm:-top-5"><Bot size={28}/></div>
-          <div className="relative z-10"><p className="text-xs font-bold uppercase tracking-[.18em] text-white/60">{heroMedia ? heroMedia.title : "Try asking"}</p>
-          <p className="mt-5 text-2xl font-semibold leading-snug sm:text-3xl">{heroMedia?.description || "I need a modern sea-view apartment in Beirut under $450,000, with parking and a balcony."}</p>
-          <div className="mt-10 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><Building2 className="mb-3 text-[#46b4f5]"/><b>Live inventory</b><p className="mt-1 text-sm text-white/55">Current availability</p></div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><ShieldCheck className="mb-3 text-[#46b4f5]"/><b>Trusted follow-up</b><p className="mt-1 text-sm text-white/55">Real local agents</p></div>
-          </div></div>
+          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border border-white/15 bg-black/20 px-4 py-3 text-sm text-white/75 backdrop-blur-lg sm:w-fit sm:rounded-full">
+            <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-[#54baff]"/>Natural-language search</span>
+            <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-[#54baff]"/>Direct agent follow-up</span>
+          </div>
         </div>
       </div>
     </section>
 
-    <FeaturedMediaStrip items={stripMedia} title="Featured properties and projects"/>
+    <FeaturedMediaStrip items={stripMedia} title="Featured properties and projects" billboard/>
 
     <section className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
       <div className="max-w-2xl"><p className="eyebrow">One search, three paths</p><h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Explore the market your way.</h2></div>

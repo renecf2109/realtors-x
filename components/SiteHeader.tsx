@@ -13,12 +13,12 @@ const publicLinks = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  return <header className="sticky top-0 z-40 border-b border-ink/10 bg-white/90 backdrop-blur-xl">
+  return <header className="sticky top-0 z-40 border-b border-white/40 bg-white/75 shadow-sm backdrop-blur-2xl">
     <nav aria-label="Main navigation" className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
       <BrandLogo className="h-8 w-auto sm:h-9" priority/>
-      <div className="hidden items-center gap-7 md:flex">
-        {publicLinks.map(link => <Link key={link.href} href={link.href} className="text-sm font-semibold text-ink/65 transition hover:text-sage">{link.label}</Link>)}
-        <Link href="/login" className="btn-secondary !px-4 !py-2">Agent portal</Link>
+      <div className="hidden items-center gap-1 rounded-full border border-white/70 bg-white/45 p-1.5 shadow-sm backdrop-blur-xl md:flex">
+        {publicLinks.map(link => <Link key={link.href} href={link.href} className="rounded-full px-3 py-2 text-sm font-semibold text-ink/65 transition hover:bg-white/80 hover:text-sage">{link.label}</Link>)}
+        <Link href="/login" className="rounded-full bg-ink px-4 py-2 text-sm font-bold text-white transition hover:bg-sage">Agent portal</Link>
       </div>
       <button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? "Close navigation" : "Open navigation"} className="rounded-full border border-ink/10 bg-white p-2.5 text-ink transition hover:border-sage hover:text-sage md:hidden">
         {open ? <X size={20}/> : <Menu size={20}/>}

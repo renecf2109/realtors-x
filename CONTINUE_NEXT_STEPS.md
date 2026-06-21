@@ -169,6 +169,8 @@ Migration `20260621131500_seed_featured_media_previews.sql` adds five active dum
 
 Migration `20260621134500_seed_preview_property.sql` adds one clearly labeled, removable preview property and project so the gallery and listing-featured placements are visible before real inventory exists. Delete `Realtors X Preview Property` from the Listings manager when real listings are ready.
 
+The homepage hero and `homepage_strip` placements now render as full-width cinematic bands. Hero navigation and calls to action use translucent, blurred glass strips for contrast over both images and video.
+
 ### Live admin checklist
 
 - Confirm a signed-out visitor opening `/admin` is redirected to login.

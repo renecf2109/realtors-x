@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { FeaturedMedia } from "@/lib/types";
 
-export function FeaturedMediaAsset({ item, background = false, priority = false, className = "" }: { item: FeaturedMedia; background?: boolean; priority?: boolean; className?: string }) {
+export function FeaturedMediaAsset({ item, background = false, priority = false, fit = "cover", className = "" }: { item: FeaturedMedia; background?: boolean; priority?: boolean; fit?: "cover" | "contain"; className?: string }) {
   const [motionAllowed, setMotionAllowed] = useState<boolean | null>(null);
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -13,7 +13,7 @@ export function FeaturedMediaAsset({ item, background = false, priority = false,
     return () => query.removeEventListener("change", update);
   }, []);
 
-  const mediaClass = `${background ? "h-full w-full object-cover" : "h-full w-full object-cover"} ${className}`;
+  const mediaClass = `h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"} ${className}`;
   if (item.media_type === "image") return <Image src={item.media_url} alt={item.title} fill unoptimized priority={priority} className={mediaClass}/>;
   if (background) {
     if (motionAllowed) return <video src={item.media_url} poster={item.thumbnail_url ?? undefined} autoPlay muted loop playsInline aria-label={item.title} className={mediaClass}/>;
