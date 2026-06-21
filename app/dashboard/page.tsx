@@ -14,11 +14,12 @@ export default async function Dashboard() {
   if (!user) redirect("/login");
   const [{ data: leads }, { count: listingCount }, { data: profile }, dashboardMedia] = await Promise.all([
     supabase.from("leads").select("*").order("created_at", { ascending: false }),
-    supabase.from("properties").select("*", { count: "exact", head: true }),
+    supabase.from("listings").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     getActiveFeaturedMedia(["dashboard"])
   ]);
   const typedLeads = (leads ?? []) as Lead[];
+  if ((profile as AgentProfile | null)?.role === "lead") redirect("/chat");
   return <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[240px_1fr]">
     <DashboardNav isAdmin={(profile as AgentProfile | null)?.role === "admin"}/>
     <section>

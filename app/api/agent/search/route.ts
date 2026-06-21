@@ -8,9 +8,11 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Please sign in as an agent." }, { status: 401 });
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (profile?.role !== "agent" && profile?.role !== "admin") return NextResponse.json({ error: "Agent access is required." }, { status: 403 });
     const { message } = await request.json();
     if (typeof message !== "string" || message.trim().length < 2) return NextResponse.json({ error: "Describe the inventory you need." }, { status: 400 });
-    const { data, error } = await supabase.from("properties").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("listings").select("*").order("created_at", { ascending: false });
     if (error) throw error;
     const intent = parseSearch(message);
     const matches = filterProperties((data ?? []) as Property[], intent);

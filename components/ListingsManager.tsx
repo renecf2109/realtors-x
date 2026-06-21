@@ -6,6 +6,7 @@ import { FileSpreadsheet, Images, Pencil, Plus, Sparkles, Trash2, Upload, X } fr
 import { createClient } from "@/lib/supabase/client";
 import { missingFields, parseListingDescription, parseSpreadsheetRow, type ListingDraft } from "@/lib/listingParser";
 import type { Property, PropertyInput } from "@/lib/types";
+import { formatListingPrice } from "@/lib/listingPrice";
 
 const blankDraft: ListingDraft = { description: "", features: [], images: [], availability: "available" };
 
@@ -21,7 +22,7 @@ export function ListingsManager({ initialProperties, currentUserId }: { initialP
   async function remove(id: string) {
     if (!confirm("Delete this listing?")) return;
     setNotice(null);
-    const { error } = await supabase.from("properties").delete().eq("id", id);
+    const { error } = await supabase.from("listings").delete().eq("id", id);
     if (error) { setNotice({ type: "error", text: error.message || "The listing could not be deleted." }); return; }
     setItems(value => value.filter(item => item.id !== id));
     setNotice({ type: "success", text: "Listing deleted." });
@@ -46,18 +47,18 @@ export function ListingsManager({ initialProperties, currentUserId }: { initialP
     try {
       if (editing) {
         const images = await uploadGallery(editing.id, input.images ?? [], files);
-        const { data, error } = await supabase.from("properties").update({ ...input, images }).eq("id", editing.id).select().single();
+        const { data, error } = await supabase.from("listings").update({ ...input, images }).eq("id", editing.id).select().single();
         if (error) throw error;
         setItems(value => value.map(item => item.id === editing.id ? data as Property : item));
       } else {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Please sign in again.");
-        const { data, error } = await supabase.from("properties").insert({ ...input, images: input.images ?? [], agent_id: user.id }).select().single();
+        const { data, error } = await supabase.from("listings").insert({ ...input, images: input.images ?? [], agent_id: user.id }).select().single();
         if (error) throw error;
         const images = await uploadGallery(data.id, input.images ?? [], files);
         let completed = data as Property;
         if (images.length !== (input.images ?? []).length) {
-          const result = await supabase.from("properties").update({ images }).eq("id", data.id).select().single();
+          const result = await supabase.from("listings").update({ images }).eq("id", data.id).select().single();
           if (result.error) throw result.error;
           completed = result.data as Property;
         }
@@ -78,7 +79,7 @@ export function ListingsManager({ initialProperties, currentUserId }: { initialP
     <div aria-live="polite">{notice && <p className={`mt-5 rounded-2xl border p-4 text-sm ${notice.type === "success" ? "border-blue-200 bg-lime text-sage" : "border-red-200 bg-red-50 text-red-700"}`}>{notice.text}</p>}</div>
     <div className="mt-8 grid gap-4 md:grid-cols-2">{items.map(property => <article key={property.id} className="card overflow-hidden">
       {property.images?.[0] && <div className="relative aspect-[16/9] bg-cream"><Image src={property.images[0]} alt={`${property.title} gallery image`} fill unoptimized className="object-cover"/></div>}
-      <div className="p-6"><div className="flex justify-between gap-4"><div><span className="rounded-full bg-lime px-3 py-1 text-xs font-bold capitalize text-sage">{property.availability}</span><h2 className="mt-4 text-xl font-bold">{property.title}</h2><p className="mt-1 text-sm text-ink/50">{property.location}</p></div><p className="text-lg font-black">${Number(property.price).toLocaleString()}</p></div>
+      <div className="p-6"><div className="flex justify-between gap-4"><div><span className="rounded-full bg-lime px-3 py-1 text-xs font-bold capitalize text-sage">{property.availability}</span><h2 className="mt-4 text-xl font-bold">{property.title}</h2><p className="mt-1 text-sm text-ink/50">{property.location}</p></div><p className="text-lg font-black">{formatListingPrice(property)}</p></div>
       {(property.project_name || property.investment_opportunity) && <div className="mt-4 flex flex-wrap gap-2">{property.project_name && <span className="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">{property.project_name}</span>}{property.investment_opportunity && <span className="rounded-full bg-sage px-3 py-1 text-xs font-semibold text-white">Investment{property.expected_roi ? ` · ${property.expected_roi}% ROI` : ""}</span>}</div>}
       {property.developer_name && <p className="mt-3 text-xs font-semibold text-ink/50">Developer: {property.developer_name} · {property.show_developer_to_public ? "public" : "agents only"}</p>}
       <p className="mt-5 text-sm text-ink/60">{property.bedrooms} bd · {property.bathrooms} ba · {Number(property.size).toLocaleString()} sq ft · <span className="capitalize">{property.type}</span></p>
@@ -165,7 +166,7 @@ function AIListingModal({ property, onClose, onSave }: { property: Property | nu
           <Field label="Bedrooms" missing={draft.bedrooms === undefined}><input className="field" type="number" min="0" value={draft.bedrooms ?? ""} onChange={e => update("bedrooms", Number(e.target.value))}/></Field>
           <Field label="Bathrooms" missing={draft.bathrooms === undefined}><input className="field" type="number" min="0" step="0.5" value={draft.bathrooms ?? ""} onChange={e => update("bathrooms", Number(e.target.value))}/></Field>
           <Field label="Size (sq ft)" missing={!draft.size}><input className="field" type="number" min="0" value={draft.size ?? ""} onChange={e => update("size", Number(e.target.value))}/></Field>
-          <Field label="Availability"><select className="field" value={draft.availability ?? "available"} onChange={e => update("availability", e.target.value as PropertyInput["availability"])}><option>available</option><option>booked</option><option>sold</option><option>rented</option></select></Field>
+          <Field label="Availability"><select className="field" value={draft.availability ?? "available"} onChange={e => update("availability", e.target.value as PropertyInput["availability"])}><option>available</option><option>booked</option><option>reserved</option><option>sold</option><option>rented</option><option>draft</option><option>inactive</option><option>pending</option></select></Field>
           <div className="sm:col-span-2"><Field label="Description"><textarea className="field min-h-28" value={draft.description} onChange={e => update("description", e.target.value)}/></Field></div>
           <div className="sm:col-span-2"><Field label="Features detected automatically"><input className="field" value={draft.features.join(", ")} onChange={e => update("features", e.target.value.split(",").map(value => value.trim()).filter(Boolean))} placeholder="parking, balcony, elevator"/></Field></div>
           <Field label="Project name (optional)"><input className="field" value={draft.project_name ?? ""} onChange={e => update("project_name", e.target.value || null)} placeholder="Realtors X Waterfront"/></Field>

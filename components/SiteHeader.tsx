@@ -6,6 +6,7 @@ import { useState } from "react";
 import { BrandLogo } from "./BrandLogo";
 
 const publicLinks = [
+  { href: "/listings", label: "Listings" },
   { href: "/investments", label: "Investments" },
   { href: "/projects", label: "Projects" },
   { href: "/chat", label: "Find a property" }

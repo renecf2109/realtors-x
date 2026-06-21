@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Bot, Check, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Bot, Check, Copy, FileSpreadsheet, MessageCircle, Send, Share2, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import type { Property } from "@/lib/types";
+import { formatListingPrice } from "@/lib/listingPrice";
 
 type Match = Property & { matchReasons: string[] };
 type Message = { role: "user" | "assistant"; text: string; matches?: Match[] };
@@ -16,15 +17,17 @@ export function ChatExperience() {
   const [loading, setLoading] = useState(false);
   const [showLead, setShowLead] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   async function runSearch(text: string) {
     if (!text.trim() || loading) return;
     const cleanText = text.trim();
     setMessages(value => [...value, { role: "user", text: cleanText }]); setInput(""); setLoading(true);
     try {
-      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: cleanText }) });
+      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: cleanText, conversation_id: conversationId }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "The search could not be completed.");
+      if (data.conversation_id) setConversationId(data.conversation_id);
       setMessages(value => [...value, { role: "assistant", text: data.reply || "I could not find a close match yet. Try changing the area or budget.", matches: data.matches ?? [] }]);
     } catch (error) { setMessages(value => [...value, { role: "assistant", text: error instanceof Error ? error.message : "Something went wrong. Please try again." }]); }
     finally { setLoading(false); }
@@ -43,13 +46,16 @@ export function ChatExperience() {
       {messages.length === 1 && <div className="flex flex-wrap gap-2 px-4 pb-3 sm:px-6">{suggestions.map(suggestion => <button type="button" key={suggestion} onClick={() => void runSearch(suggestion)} className="rounded-full border border-sage/25 bg-lime/50 px-3 py-2 text-left text-xs font-semibold text-sage transition hover:bg-lime">{suggestion}</button>)}</div>}
       <form onSubmit={send} className="flex items-end gap-2 border-t border-ink/10 bg-white p-3 sm:gap-3 sm:p-4"><label className="sr-only" htmlFor="property-search">Describe the property you want</label><textarea id="property-search" rows={1} className="field min-h-12 flex-1 resize-none" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runSearch(input); } }} placeholder="Describe your ideal property…" disabled={loading}/><button className="btn !min-h-12 !px-4" aria-label="Send property search" disabled={loading || !input.trim()}><Send size={18}/></button></form>
     </section>
-    <aside className="space-y-4"><div className="rounded-3xl bg-ink p-6 text-white"><Sparkles className="text-[#46b4f5]"/><h2 className="mt-5 text-2xl font-bold">Want a human eye?</h2><p className="mt-2 text-sm leading-6 text-white/65">Select matching properties, then prepare an inquiry for the listing agent or admin on WhatsApp.</p><button onClick={() => setShowLead(true)} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-sage px-5 py-3 text-sm font-bold text-white transition hover:bg-[#0874b7]"><MessageCircle size={17}/>{selectedIds.length ? `Request ${selectedIds.length} selected` : "Request a call"}</button></div><div className="card p-5 text-sm text-ink/55"><b className="text-ink">For stronger results</b><p className="mt-2 leading-6">Include budget, area, bedrooms, property type, size, and must-have features.</p></div></aside>
+    <aside className="space-y-4"><div className="rounded-3xl bg-ink p-6 text-white"><Sparkles className="text-[#46b4f5]"/><h2 className="mt-5 text-2xl font-bold">Want a human eye?</h2><p className="mt-2 text-sm leading-6 text-white/65">Select matching properties, then prepare an inquiry for the listing agent or admin on WhatsApp.</p><button onClick={() => setShowLead(true)} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-sage px-5 py-3 text-sm font-bold text-white transition hover:bg-[#0874b7]"><MessageCircle size={17}/>{selectedIds.length ? `Request ${selectedIds.length} selected` : "Request a call"}</button></div><div className="card p-5 text-sm text-ink/55"><b className="text-ink">For stronger results</b><p className="mt-2 leading-6">Include budget, area, bedrooms, property type, size, and must-have features.</p></div><div className="card p-5"><FileSpreadsheet className="text-sage"/><h2 className="mt-3 font-black">Have a listing spreadsheet?</h2><p className="mt-2 text-sm leading-6 text-ink/55">Agents and admins can import CSV or Excel files, with automatic column mapping and row verification.</p><Link href="/dashboard/imports/new" className="mt-4 inline-flex text-sm font-bold text-sage hover:text-[#0874b7]">Open listing importer →</Link></div></aside>
     {showLead && <LeadModal propertyIds={selectedIds} onClose={() => setShowLead(false)}/>} 
   </div>;
 }
 
 function PropertyResult({ property, selected, onToggle }: { property: Match; selected: boolean; onToggle: () => void }) {
-  return <article className={`overflow-hidden rounded-2xl border bg-white ${selected ? "border-sage ring-2 ring-sage/20" : "border-ink/10"}`}>{property.images?.[0] && <div className="relative aspect-[16/9]"><Image src={property.images[0]} alt={`${property.title} property image`} fill unoptimized className="object-cover"/></div>}<div className="p-4"><div className="flex items-start justify-between gap-2"><span className="text-xs font-bold uppercase text-sage">{property.type}</span><b className="whitespace-nowrap">${Number(property.price).toLocaleString()}</b></div><h3 className="mt-2 font-bold">{property.title}</h3><p className="mt-1 text-xs leading-5 text-ink/50">{property.location} · {property.bedrooms} bd · {property.bathrooms} ba · {Number(property.size).toLocaleString()} sq ft</p>{property.matchReasons.length > 0 && <p className="mt-3 text-xs leading-5 text-sage">Matches: {property.matchReasons.join(", ")}</p>}<div className="mt-4 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onToggle} className={selected ? "flex-1 rounded-full bg-sage px-3 py-2 text-xs font-bold text-white" : "flex-1 rounded-full bg-lime px-3 py-2 text-xs font-bold text-sage"}>{selected ? <><Check className="mr-1 inline" size={13}/>Selected</> : "I’m interested"}</button><Link href={`/properties/${property.id}`} className="rounded-full border border-ink/10 px-3 py-2 text-center text-xs font-bold transition hover:border-sage hover:text-sage">View details</Link></div></div></article>;
+  const [copied, setCopied] = useState("");
+  async function copy(value: string, label: string) { await navigator.clipboard.writeText(value); setCopied(label); window.setTimeout(() => setCopied(""), 1600); }
+  const path = `/listings/${property.id}`;
+  return <article className={`overflow-hidden rounded-2xl border bg-white ${selected ? "border-sage ring-2 ring-sage/20" : "border-ink/10"}`}>{property.images?.[0] && <div className="relative aspect-[16/9]"><Image src={property.images[0]} alt={`${property.title} property image`} fill unoptimized className="object-cover"/></div>}<div className="p-4"><div className="flex items-start justify-between gap-2"><span className="text-xs font-bold uppercase text-sage">{property.type}</span><b className="whitespace-nowrap">{formatListingPrice(property)}</b></div><h3 className="mt-2 font-bold">{property.title}</h3><p className="mt-1 text-xs leading-5 text-ink/50">{property.location} · {property.bedrooms} bd · {property.bathrooms} ba · {Number(property.size).toLocaleString()} sq ft</p>{property.matchReasons.length > 0 && <p className="mt-3 text-xs leading-5 text-sage">Matches: {property.matchReasons.join(", ")}</p>}<div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={onToggle} className={selected ? "rounded-full bg-sage px-3 py-2 text-xs font-bold text-white" : "rounded-full bg-lime px-3 py-2 text-xs font-bold text-sage"}>{selected ? <><Check className="mr-1 inline" size={13}/>Selected</> : "Interested"}</button><Link href={path} className="rounded-full border border-ink/10 px-3 py-2 text-center text-xs font-bold transition hover:border-sage hover:text-sage">View listing</Link><button type="button" onClick={() => copy(`${window.location.origin}${path}`, "link")} className="rounded-full border border-ink/10 px-3 py-2 text-xs font-bold"><Copy className="mr-1 inline" size={13}/>{copied === "link" ? "Copied" : "Copy link"}</button><button type="button" onClick={() => copy(`${property.title} — ${formatListingPrice(property)} — ${property.location}\n${window.location.origin}${path}`, "message")} className="rounded-full border border-ink/10 px-3 py-2 text-xs font-bold"><Share2 className="mr-1 inline" size={13}/>{copied === "message" ? "Copied" : "Copy message"}</button></div></div></article>;
 }
 
 function LeadModal({ propertyIds, onClose }: { propertyIds: string[]; onClose: () => void }) {

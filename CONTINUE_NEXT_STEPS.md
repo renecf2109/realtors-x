@@ -248,3 +248,91 @@ Start by inspecting the files I attach and give me the validation report. Do not
 ## Recovery reference
 
 If future work causes instability, compare against website commit `914b0b7` and the successful migration workflow run linked above. Do not roll back database migrations or production data destructively without an explicit recovery plan.
+
+## AI Workbench Phase 1
+
+Phase 1 adds one structured Realtors X workflow for buyer requests, listing discovery, agent/admin inquiries, and spreadsheet imports. It is website-only; no mobile app, payment integration, custom domain, or repository restructuring was added.
+
+### Routes
+
+- `/chat` — public AI/rule-based property search with categorized requests, verified active matches, listing links, copy-link, and copy-share-message controls.
+- `/listings` — public catalog of active listings.
+- `/listings/[id]` — public active listing detail and image/video gallery.
+- `/dashboard/listings` — protected listing management for admins and agents.
+- `/dashboard/inquiries` — inquiries owned by a lead or assigned to the signed-in agent.
+- `/dashboard/imports` — signed-in agent/admin import history.
+- `/dashboard/imports/new` — CSV, XLS, and XLSX listing import workbench.
+- `/admin` — admin command center.
+- `/admin/inquiries` — all AI inquiries for admins.
+- `/admin/imports` — all listing imports for admins.
+
+Leads are sent to `/chat` if they try to open agent inventory or workspace tools. Admin pages still require an authenticated `admin` profile role.
+
+### Database migration
+
+Migration: `supabase/migrations/20260621170000_ai_workbench_phase1.sql`
+
+This migration makes `listings` the canonical inventory table while preserving a protected compatibility view named `properties`. It adds `listing_media`, `listing_imports`, `listing_import_rows`, `ai_conversations`, `ai_messages`, `ai_inquiries`, and `ai_uploads`; expands profile roles to `admin`, `agent`, and `lead`; adds import traceability and price-status support; and applies RLS, least-privilege grants, checks, indexes, and timestamps.
+
+RLS rules:
+
+- Public users can read active/available listings and their media only.
+- Admins can manage all listings, imports, media, and inquiries.
+- Agents can manage their own listings/imports and inquiries assigned to them.
+- Leads can read only their own conversations and inquiries.
+- Anonymous inquiry creation cannot assign an agent, choose a non-new status, or attach to another user’s conversation.
+
+### Admin and role setup
+
+Use the existing Supabase SQL Editor role procedure above to set a profile role to `admin`. To make an account an agent, use the same safe email lookup and set `role = 'agent'`; use `role = 'lead'` for buyer-only accounts. Never use or paste a password, access token, database URL, or service-role key into the website.
+
+### Import rules
+
+- Accepted files: CSV, XLS, and XLSX, up to 10 MB and 5,000 rows per import.
+- Messy headers are normalized using common aliases such as listing name/title, address/area/location, price/asking price, property type/category, and status/availability.
+- Required groups: title or address/location; price or price status; property type; listing status.
+- Missing optional data is allowed and reported as blue `optional skipped`.
+- Green means `imported`; yellow means `needs review`; red means `required missing`; gray means `duplicate/skipped`.
+- Duplicate detection uses normalized title/location/price/type values against existing inventory and earlier rows in the same file.
+- Every row is recorded with its mapped data, issues, and final status for review.
+- Media URLs are stored in `listing_media`; large images and videos are not committed to GitHub.
+
+### Categorizer and verifier
+
+The server returns structured categorization for property search leads, contact/showing requests, listing submissions, bulk imports, listing updates, featured-media requests, media uploads, admin tasks, agent support, general questions, and unknown requests needing follow-up. Phase 1 intentionally uses the deterministic rule-based fallback, so it works without an AI key.
+
+Before output or persistence, the verifier checks required import fields, optional omissions, current role, duplicate candidates, and active/relevant public listing matches.
+
+### Phase 1 verification checklist
+
+- Upload one valid spreadsheet and confirm imported rows are green.
+- Upload a row with only optional fields missing and confirm it is blue.
+- Upload a row missing type or status and confirm it is red and not imported.
+- Upload the same row twice and confirm the duplicate is gray.
+- Ask `/chat` for a location, type, budget, size, or feature combination and verify multiple active results and both copy buttons.
+- Confirm a lead can browse public `/listings` but cannot open `/dashboard/listings`, `/agent-search`, `/admin`, or another user’s inquiry/conversation.
+- Confirm agents see only their own imports/listings and assigned inquiries.
+- Confirm admins see all imports and inquiries.
+- Confirm inactive or sold listings are absent from public search and public detail access.
+
+### Recommended next phase
+
+Use Phase 1 with a small reviewed set of real listings first. Phase 2 should add an admin mapping-review screen, resumable imports, direct Supabase Storage uploads, agent assignment UI, and an optional server-side AI provider only after the deterministic rules and production data are proven.
+
+Exact next prompt:
+
+```text
+Start Realtors X AI Workbench Phase 2 for the existing website only.
+
+Read CONTINUE_NEXT_STEPS.md and continue from the Phase 1 production checkpoint. Preserve all existing website design, Supabase RLS, imports, conversations, inquiries, listing links, and public search behavior.
+
+Add:
+- an admin column-mapping and row-review screen before import confirmation
+- resumable imports with retry for reviewed rows
+- Supabase Storage uploads for listing images and videos
+- admin assignment of inquiries to agents
+- conversation history in the dashboard
+- optional server-side AI categorization behind the existing rule-based fallback
+
+Do not start a mobile app, add Stripe, add a custom domain, restructure the repository, expose secrets, or use a service-role key in browser code. Use Supabase migrations, run tests/lint/TypeScript/build, verify RLS and live routes, and commit/push only after every check passes.
+```

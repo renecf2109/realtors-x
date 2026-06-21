@@ -38,8 +38,8 @@ export function parseSearch(message: string): SearchIntent {
 
 export function filterProperties(properties: Property[], intent: SearchIntent) {
   return properties.filter(property => {
-    if (intent.maxPrice !== undefined && Number(property.price) > intent.maxPrice) return false;
-    if (intent.minPrice !== undefined && Number(property.price) < intent.minPrice) return false;
+    if (intent.maxPrice !== undefined && (property.price === null || Number(property.price) > intent.maxPrice)) return false;
+    if (intent.minPrice !== undefined && (property.price === null || Number(property.price) < intent.minPrice)) return false;
     if (intent.minBeds !== undefined && Number(property.bedrooms) < intent.minBeds) return false;
     if (intent.minBaths !== undefined && Number(property.bathrooms) < intent.minBaths) return false;
     if (intent.minSize !== undefined && Number(property.size) < intent.minSize) return false;
@@ -50,7 +50,7 @@ export function filterProperties(properties: Property[], intent: SearchIntent) {
     const haystack = `${property.description} ${property.features.join(" ")}`.toLowerCase();
     if (intent.features.some(feature => !haystack.includes(feature))) return false;
     return true;
-  }).sort((a, b) => Number(a.price) - Number(b.price));
+  }).sort((a, b) => (a.price === null ? Number.MAX_SAFE_INTEGER : Number(a.price)) - (b.price === null ? Number.MAX_SAFE_INTEGER : Number(b.price)));
 }
 
 export function rankProperties(properties: Property[], intent: SearchIntent) {

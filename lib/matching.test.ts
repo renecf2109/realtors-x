@@ -3,7 +3,7 @@ import { filterProperties, parseSearch } from "./matching";
 import type { Property } from "./types";
 
 const base: Property = {
-  id: "1", agent_id: "agent", title: "Sea View Apartment", price: 450000,
+  id: "1", agent_id: "agent", title: "Sea View Apartment", price: 450000, price_status: null,
   location: "Medyar", bedrooms: 3, bathrooms: 2, size: 1800, type: "apartment",
   description: "Open sea view home", features: ["sea view", "parking"], images: [],
   project_name: null, investment_opportunity: false, expected_roi: null, completion_date: null,
