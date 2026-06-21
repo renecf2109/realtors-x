@@ -167,6 +167,8 @@ For `listing_featured`, set the destination link to the exact property path, suc
 
 Migration `20260621131500_seed_featured_media_previews.sql` adds five active dummy placements using the existing Realtors X logo. A `listing_featured` item without a destination link appears across all property pages; adding `/properties/PROPERTY_ID` targets one property. The previews are normal database records and can be edited, deactivated, or deleted from `/admin/featured-media` when real advertising assets are ready.
 
+Migration `20260621134500_seed_preview_property.sql` adds one clearly labeled, removable preview property and project so the gallery and listing-featured placements are visible before real inventory exists. Delete `Realtors X Preview Property` from the Listings manager when real listings are ready.
+
 ### Live admin checklist
 
 - Confirm a signed-out visitor opening `/admin` is redirected to login.
