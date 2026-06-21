@@ -120,6 +120,12 @@ Website display behavior:
 
 ### Make your account an admin
 
+The requested account is assigned through migration `20260621124500_assign_realtors_x_admin.sql`. The migration stores only a salted fingerprint—not the plaintext login email—and fails safely unless exactly one authenticated account matches.
+
+After the migration completes, sign out and sign in again. The **Admin** option will appear in the agent workspace.
+
+Manual SQL below is retained only as a recovery reference; it is not required for the configured account.
+
 1. Create or sign in to your Realtors X account and confirm its email address.
 2. Open the Supabase project dashboard.
 3. Click **SQL Editor** in the left sidebar.
