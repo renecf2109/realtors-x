@@ -165,6 +165,8 @@ The final result should show the email with role `admin`. Do not use a password,
 
 For `listing_featured`, set the destination link to the exact property path, such as `/properties/PROPERTY_ID`. For project-specific gallery media, use the matching project path, such as `/projects/PROJECT-NAME`.
 
+Migration `20260621131500_seed_featured_media_previews.sql` adds five active dummy placements using the existing Realtors X logo. A `listing_featured` item without a destination link appears across all property pages; adding `/properties/PROPERTY_ID` targets one property. The previews are normal database records and can be edited, deactivated, or deleted from `/admin/featured-media` when real advertising assets are ready.
+
 ### Live admin checklist
 
 - Confirm a signed-out visitor opening `/admin` is redirected to login.
