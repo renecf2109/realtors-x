@@ -1,19 +1,19 @@
 # Realtors X - Stable Production Checkpoint
 
-Checkpoint date: **June 20, 2026**
+Checkpoint date: **June 21, 2026**
 
 ## Current stable checkpoint
 
 - Production website: https://realtors-x.vercel.app
 - GitHub repository: https://github.com/renecf2109/realtors-x
-- Stable website commit: `914b0b7`
+- Phase 1 stable commit: `bfa1c58`
 - Production branch: `main`
 - Git status after deployment: clean
 - Supabase is connected.
 - Supabase Authentication URL configuration is complete.
 - Database schema and privacy migrations are applied.
 - GitHub Actions Supabase migration workflow is passing.
-- Successful migration reference: https://github.com/renecf2109/realtors-x/actions/runs/27876525745
+- Successful Phase 1 migration reference: https://github.com/renecf2109/realtors-x/actions/runs/27909654975
 - No mobile application has been started.
 - The repository has not been restructured.
 
@@ -22,10 +22,10 @@ Checkpoint date: **June 20, 2026**
 The website polish passed the full production gate:
 
 ```text
-npm run test       - passed, 5 tests
+npm run test       - passed, 20 tests
 npm run lint       - passed
 npx tsc --noEmit   - passed
-npm run build      - passed, 19 routes generated
+npm run build      - passed, 28 routes generated
 ```
 
 Additional production checks passed:
@@ -36,7 +36,7 @@ Additional production checks passed:
 - Favicon and Realtors X logo assets
 - `robots.txt`
 - `sitemap.xml`
-- Vercel deployment of commit `914b0b7`
+- Vercel deployment of Phase 1 commit `bfa1c58`
 
 ## Completed website work
 
@@ -336,3 +336,48 @@ Add:
 
 Do not start a mobile app, add Stripe, add a custom domain, restructure the repository, expose secrets, or use a service-role key in browser code. Use Supabase migrations, run tests/lint/TypeScript/build, verify RLS and live routes, and commit/push only after every check passes.
 ```
+
+## Featured Media Phase 2
+
+Featured Media Phase 2 preserves and hardens the existing admin-controlled image/video system. The website remains the only application; no mobile application, Stripe integration, custom domain, or repository restructure was added.
+
+### Routes and migrations
+
+- Admin command center: `/admin`
+- Featured media library and editor: `/admin/featured-media`
+- Original schema migration: `supabase/migrations/20260621100000_admin_featured_media.sql`
+- Phase 2 RLS hardening migration: `supabase/migrations/20260621193000_featured_media_phase2.sql`
+
+The `featured_media` table stores title, description, image/video type, public HTTPS media URL, optional poster URL, placement, destination link, sort order, active state, optional schedule, creator, and timestamps.
+
+### Admin access
+
+To make an existing account an admin, open Supabase → SQL Editor → New query and run the safe email-based role update documented in **Make your account an admin** above. Replace only the placeholder email. Never paste a password, access token, database password, or service-role key.
+
+Only `profiles.role = 'admin'` users can create, update, activate, deactivate, or delete featured media. Agents and leads can read only media that is active and currently inside its schedule. Signed-out visitors have the same active-only read boundary.
+
+### Adding images and videos
+
+1. Sign in with the admin account.
+2. Open `/admin/featured-media`.
+3. Choose **Add featured media**.
+4. Select Image or Video and enter a public HTTPS media URL.
+5. For video, add a public HTTPS thumbnail/poster URL when available.
+6. Choose placement, sort order, schedule, active state, and optional destination link.
+7. Confirm the preview and save.
+
+Do not commit large images or any video files to GitHub. The URL fields are ready for public Supabase Storage URLs when Storage upload management is added later. Background videos autoplay only while motion is allowed and are always muted, looped, and `playsInline`; reduced-motion visitors see the poster or a static fallback.
+
+### Placement behavior
+
+- `homepage_hero` — selects the homepage background image/video. The first active item by sort order wins.
+- `homepage_strip` — renders full-width featured campaign bands below the hero.
+- `gallery` — appears in project galleries; set `link_url` to a project path to target one project, or leave blank for all galleries.
+- `dashboard` — appears in the signed-in agent/admin dashboard promotion area.
+- `listing_featured` — appears in listing galleries; use `/listings/LISTING_ID` or the compatible `/properties/LISTING_ID` path to target one listing, or leave blank for all listings.
+
+The admin library reports the accurate public state as **Live**, **Scheduled**, **Expired**, or **Inactive**. Sort order controls presentation order within a placement.
+
+### Future mobile note
+
+No mobile application has been started. A future mobile app may reuse the same active `featured_media` records and placement values after the website remains stable; do not restructure the repository until that future phase is explicitly authorized.

@@ -15,6 +15,8 @@ function isHttpsUrl(value: string) {
 export function validateFeaturedMedia(input: FeaturedMediaInput) {
   if (!input.title.trim()) return "Enter a title.";
   if (input.title.trim().length > 160) return "Keep the title under 160 characters.";
+  if (!(["image", "video"] as string[]).includes(input.media_type)) return "Choose image or video media.";
+  if (!featuredMediaPlacements.some(option => option.value === input.placement)) return "Choose a valid website placement.";
   if (!isHttpsUrl(input.media_url.trim())) return "Media URL must be a valid HTTPS URL.";
   if (input.thumbnail_url && !isHttpsUrl(input.thumbnail_url.trim())) return "Thumbnail URL must be a valid HTTPS URL.";
   if (input.link_url) {
@@ -32,6 +34,13 @@ export function isFeaturedMediaActive(item: FeaturedMedia, now = new Date()) {
   if (item.starts_at && new Date(item.starts_at) > now) return false;
   if (item.ends_at && new Date(item.ends_at) <= now) return false;
   return true;
+}
+
+export function featuredMediaVisibility(item: FeaturedMedia, now = new Date()): "live" | "inactive" | "scheduled" | "expired" {
+  if (!item.is_active) return "inactive";
+  if (item.starts_at && new Date(item.starts_at) > now) return "scheduled";
+  if (item.ends_at && new Date(item.ends_at) <= now) return "expired";
+  return "live";
 }
 
 export function activeFeaturedMedia(items: FeaturedMedia[], now = new Date()) {
