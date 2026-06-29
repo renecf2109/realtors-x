@@ -18,7 +18,7 @@ export type Property = {
   completion_date: string | null;
   developer_name: string | null;
   show_developer_to_public: boolean;
-  availability: "available" | "booked" | "reserved" | "sold" | "rented" | "draft" | "inactive" | "pending";
+  availability: "available" | "booked" | "reserved" | "sold" | "rented" | "draft" | "inactive" | "pending" | "under_construction";
   created_at: string;
 };
 

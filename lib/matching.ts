@@ -27,7 +27,7 @@ export function parseSearch(message: string): SearchIntent {
   const locationRaw = q.match(/(?:in|near|around|at)\s+([a-z][a-z\s'-]{1,40})/)?.[1]?.trim();
   const location = locationRaw?.split(stopLocations)[0]?.trim();
   const features = featureDictionary.filter(feature => q.includes(feature));
-  const statuses = ["available", "booked", "reserved", "sold", "rented"].filter(status => q.includes(status));
+  const statuses = ["available", "booked", "reserved", "sold", "rented", "under_construction"].filter(status => q.includes(status) || (status === "under_construction" && /under[\s-]*construction|off[\s-]*plan/.test(q)));
   return {
     maxPrice, minPrice, minBeds: beds ? Number(beds[1]) : undefined, minBaths: baths ? Number(baths[1]) : undefined,
     minSize: minSizeMatch ? Number(minSizeMatch[1]) : undefined,

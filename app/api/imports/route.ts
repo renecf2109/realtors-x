@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     const fileName = typeof body.file_name === "string" ? body.file_name.trim().slice(0, 240) : "";
     const fileType = typeof body.file_type === "string" ? body.file_type.toLowerCase() : "";
     const rows = Array.isArray(body.rows) ? body.rows.slice(0, 5000) as Record<string, unknown>[] : [];
+    const detectedColumns = Array.isArray(body.columns) ? body.columns.map(String).filter(Boolean).slice(0, 80) : Array.from(new Set(rows.flatMap(row => Object.keys(row)))).slice(0, 80);
     if (!fileName || !allowedTypes.includes(fileType) || !rows.length) return NextResponse.json({ error: "Choose a non-empty CSV or Excel file." }, { status: 400 });
 
     const { data: importRecord, error: importError } = await supabase.from("listing_imports").insert({ created_by: user.id, file_name: fileName, file_type: fileType, total_rows: rows.length }).select().single();
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     const verifiedRows: VerifiedImportRow[] = [];
 
     for (let index = 0; index < rows.length; index++) {
-      let verified = verifyImportRow(rows[index], index + 2);
+      let verified = verifyImportRow(rows[index], index + 2, { fileName });
       if (verified.duplicate_key && duplicateKeys.has(verified.duplicate_key)) verified = markDuplicate(verified);
       if (["imported", "optional_skipped"].includes(verified.row_status)) {
         const mapped = verified.mapped_data as MappedListing;
@@ -37,14 +38,18 @@ export async function POST(request: Request) {
           location: mapped.location, type: mapped.type, availability: mapped.availability,
           bedrooms: mapped.bedrooms, bathrooms: mapped.bathrooms, size: mapped.size,
           description: mapped.description, features: mapped.features, images: mapped.images,
-          project_name: mapped.project_name, investment_opportunity: false, show_developer_to_public: false,
+          project_name: mapped.project_name, completion_date: mapped.completion_date, investment_opportunity: false, show_developer_to_public: false,
           source_import_id: importRecord.id, source_row_number: verified.row_number
         }).select().single();
         if (error) verified = { ...verified, row_status: "needs_review", messages: [...verified.messages, "Database validation needs review"] };
         else {
           verified = { ...verified, mapped_data: { ...verified.mapped_data, id: listing.id } };
           duplicateKeys.add(verified.duplicate_key!);
-          if (mapped.images.length) await supabase.from("listing_media").insert(mapped.images.map((url, mediaIndex) => ({ listing_id: listing.id, media_type: "image", media_url: url, sort_order: mediaIndex })));
+          const mediaRows = [
+            ...mapped.images.map((url, mediaIndex) => ({ listing_id: listing.id, media_type: "image", media_url: url, sort_order: mediaIndex })),
+            ...(mapped.videos ?? []).map((url, mediaIndex) => ({ listing_id: listing.id, media_type: "video", media_url: url, sort_order: mapped.images.length + mediaIndex }))
+          ];
+          if (mediaRows.length) await supabase.from("listing_media").insert(mediaRows);
         }
       }
       verifiedRows.push(verified);
@@ -59,7 +64,7 @@ export async function POST(request: Request) {
       supabase.from("listing_imports").update({ imported_rows: counts.imported, optional_skipped_rows: counts.optional_skipped, review_rows: counts.needs_review, failed_rows: counts.required_missing, duplicate_rows: counts.duplicate_skipped, status: finalStatus, completed_at: new Date().toISOString() }).eq("id", importRecord.id),
       supabase.from("ai_uploads").update({ status: "completed" }).eq("import_id", importRecord.id)
     ]);
-    return NextResponse.json({ import_id: importRecord.id, status: finalStatus, counts, rows: verifiedRows });
+    return NextResponse.json({ import_id: importRecord.id, status: finalStatus, counts, columns: detectedColumns, rows: verifiedRows });
   } catch {
     return NextResponse.json({ error: "The import could not be completed. Check the file and try again." }, { status: 500 });
   }

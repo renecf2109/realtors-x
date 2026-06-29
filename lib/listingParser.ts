@@ -47,10 +47,14 @@ export function normalizeListingStatus(value: unknown) {
     "available now": "available",
     unavailable: "inactive",
     "under offer": "reserved",
-    leased: "rented"
+    leased: "rented",
+    "under construction": "under_construction",
+    "under-construction": "under_construction",
+    "off plan": "under_construction",
+    "off-plan": "under_construction"
   };
   const mapped = map[raw] ?? raw;
-  return (["available", "booked", "reserved", "sold", "rented", "draft", "inactive", "pending"] as const).find(status => status === mapped);
+  return (["available", "booked", "reserved", "sold", "rented", "draft", "inactive", "pending", "under_construction"] as const).find(status => status === mapped);
 }
 
 const titleCase = (value: string) => value.replace(/\b\w/g, letter => letter.toUpperCase());

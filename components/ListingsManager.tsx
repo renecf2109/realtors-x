@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { FileSpreadsheet, Images, Pencil, Plus, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -74,7 +75,7 @@ export function ListingsManager({ initialProperties, currentUserId }: { initialP
   return <section>
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div><p className="text-sm font-semibold text-sage">AI inventory</p><h1 className="mt-1 text-4xl font-black">Property listings</h1></div>
-      <button className="btn gap-2" onClick={showCreate}><Sparkles size={17}/> Create with AI</button>
+      <div className="flex flex-wrap gap-2"><Link href="/dashboard/listings/new" className="btn gap-2"><Sparkles size={17}/> Paste new listing</Link><button className="btn-secondary gap-2" onClick={showCreate}><Sparkles size={17}/> Quick modal</button></div>
     </div>
     <div aria-live="polite">{notice && <p className={`mt-5 rounded-2xl border p-4 text-sm ${notice.type === "success" ? "border-blue-200 bg-lime text-sage" : "border-red-200 bg-red-50 text-red-700"}`}>{notice.text}</p>}</div>
     <div className="mt-8 grid gap-4 md:grid-cols-2">{items.map(property => <article key={property.id} className="card overflow-hidden">
