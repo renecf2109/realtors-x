@@ -6,7 +6,11 @@ Checkpoint date: **June 21, 2026**
 
 - Production website: https://realtors-x.vercel.app
 - GitHub repository: https://github.com/renecf2109/realtors-x
-- Phase 1 stable commit: `bfa1c58`
+- Phase 1 AI Workbench: complete
+- Phase 1 commit: `bfa1c58`
+- Phase 2 featured media: complete
+- Phase 2 commit: `c288ff4`
+- Phase 2 migration: `supabase/migrations/20260621193000_featured_media_phase2.sql`
 - Production branch: `main`
 - Git status after deployment: clean
 - Supabase is connected.
@@ -14,6 +18,11 @@ Checkpoint date: **June 21, 2026**
 - Database schema and privacy migrations are applied.
 - GitHub Actions Supabase migration workflow is passing.
 - Successful Phase 1 migration reference: https://github.com/renecf2109/realtors-x/actions/runs/27909654975
+- Successful Phase 2 migration reference: https://github.com/renecf2109/realtors-x/actions/runs/27909933560
+- Homepage featured media is verified.
+- Inactive featured media is hidden publicly.
+- The admin featured-media route is protected.
+- Image/video rendering, poster support, reduced-motion behavior, and gallery media are verified.
 - No mobile application has been started.
 - The repository has not been restructured.
 
@@ -22,7 +31,7 @@ Checkpoint date: **June 21, 2026**
 The website polish passed the full production gate:
 
 ```text
-npm run test       - passed, 20 tests
+npm run test       - passed, 22 tests
 npm run lint       - passed
 npx tsc --noEmit   - passed
 npm run build      - passed, 28 routes generated
@@ -37,6 +46,8 @@ Additional production checks passed:
 - `robots.txt`
 - `sitemap.xml`
 - Vercel deployment of Phase 1 commit `bfa1c58`
+- Vercel deployment of Phase 2 commit `c288ff4`
+- Featured media RLS, homepage placement, inactive-media filtering, protected admin access, video posters, reduced motion, and gallery rendering
 
 ## Completed website work
 

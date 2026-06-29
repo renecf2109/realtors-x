@@ -46,4 +46,27 @@ Available now.`);
     expect(draft.features).toContain("balcony");
     expect(missingFields(draft)).toEqual(["price", "bedrooms", "bathrooms", "size"]);
   });
+
+  it("handles messy pasted labeled text with plural type and comma numbers", () => {
+    const draft = parseListingDescription(`Property Name - Sky Tower Residence
+Area — Downtown Beirut
+Property Type: Apartments
+Bedrooms: 3
+Bathrooms: 2.5
+Size: 1,850
+Price: USD 475,000
+Status: Available now
+Features: Parking | Sea view | Concierge`);
+
+    expect(draft.title).toBe("Sky Tower Residence");
+    expect(draft.location).toBe("Downtown Beirut");
+    expect(draft.type).toBe("apartment");
+    expect(draft.bedrooms).toBe(3);
+    expect(draft.bathrooms).toBe(2.5);
+    expect(draft.size).toBe(1850);
+    expect(draft.price).toBe(475000);
+    expect(draft.availability).toBe("available");
+    expect(draft.features).toEqual(expect.arrayContaining(["Parking", "Sea view", "Concierge"]));
+    expect(missingFields(draft)).toEqual([]);
+  });
 });
