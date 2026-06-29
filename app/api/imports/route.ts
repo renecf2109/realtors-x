@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { markDuplicate, verifyImportRow, type MappedListing, type VerifiedImportRow } from "@/lib/listingImport";
+import { extractListing } from "@/lib/aiWorkbench";
+import { markDuplicate, verifiedRowFromAI, type MappedListing, type VerifiedImportRow } from "@/lib/listingImport";
 import type { ImportRowStatus } from "@/lib/types";
 
 const allowedTypes = ["csv", "xlsx", "xls"];
@@ -29,7 +30,8 @@ export async function POST(request: Request) {
     const verifiedRows: VerifiedImportRow[] = [];
 
     for (let index = 0; index < rows.length; index++) {
-      let verified = verifyImportRow(rows[index], index + 2, { fileName });
+      const ai = await extractListing({ row: rows[index], columns: detectedColumns, fileName });
+      let verified = verifiedRowFromAI(rows[index], index + 2, ai.data, ai.source, ai.warning);
       if (verified.duplicate_key && duplicateKeys.has(verified.duplicate_key)) verified = markDuplicate(verified);
       if (["imported", "optional_skipped"].includes(verified.row_status)) {
         const mapped = verified.mapped_data as MappedListing;

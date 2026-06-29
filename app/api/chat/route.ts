@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { categorizeRequest } from "@/lib/aiCategorizer";
+import { categorizeMessage, explainListingMatch } from "@/lib/aiWorkbench";
 import { parseSearch, rankProperties } from "@/lib/matching";
 import { createClient } from "@/lib/supabase/server";
 import type { Property, WorkbenchCategory } from "@/lib/types";
@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     if (message.length < 2) return NextResponse.json({ error: "Please describe what you need." }, { status: 400 });
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const categorization = categorizeRequest(message);
+    const categorizationResult = await categorizeMessage(message);
+    const categorization = categorizationResult.data;
     let conversationId = typeof body.conversation_id === "string" ? body.conversation_id : null;
 
     if (user) {
@@ -34,11 +35,14 @@ export async function POST(request: Request) {
     const shouldSuggest = ["property_search_lead","showing_request","contact_request","general_question"].includes(categorization.category);
     const matches = shouldSuggest ? rankProperties((data ?? []) as Property[], intent) : [];
     const reply = buildReply(categorization.category, matches.length);
-    const safeMatches = matches.map(match => ({ ...match.property, developer_name: match.property.show_developer_to_public ? match.property.developer_name : null, show_developer_to_public: Boolean(match.property.show_developer_to_public), agent_id: undefined, matchReasons: match.reasons.length ? match.reasons : ["active listing"] }));
+    const safeMatches = await Promise.all(matches.map(async match => {
+      const aiReasons = await explainListingMatch({ request: message, title: match.property.title, location: match.property.location, features: match.property.features });
+      return { ...match.property, developer_name: match.property.show_developer_to_public ? match.property.developer_name : null, show_developer_to_public: Boolean(match.property.show_developer_to_public), agent_id: undefined, matchReasons: aiReasons?.length ? aiReasons : match.reasons.length ? match.reasons : ["active listing"] };
+    }));
 
     if (inquiryCategories.has(categorization.category)) await supabase.from("ai_inquiries").insert({ lead_user_id: user?.id ?? null, conversation_id: conversationId, category: categorization.category, subject: message.slice(0, 120), details: message, listing_ids: safeMatches.map(item => item.id) });
     if (conversationId) await supabase.from("ai_messages").insert({ conversation_id: conversationId, sender: "assistant", content: reply, structured_data: { categorization, listing_ids: safeMatches.map(item => item.id) } });
-    return NextResponse.json({ reply, intent, categorization, conversation_id: conversationId, matches: safeMatches });
+    return NextResponse.json({ reply, intent, categorization, ai_source: categorizationResult.source, warning: categorizationResult.warning ?? null, conversation_id: conversationId, matches: safeMatches });
   } catch {
     return NextResponse.json({ error: "I couldn't organize that request just now. Please try again." }, { status: 500 });
   }

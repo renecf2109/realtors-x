@@ -3,7 +3,7 @@ import type { WorkbenchCategory } from "./types";
 export type Categorization = {
   category: WorkbenchCategory;
   confidence: number;
-  source: "rule_based";
+  source: "rule_based" | "openai";
   requires_followup: boolean;
   entities: { locations: string[]; listing_ids: string[] };
 };

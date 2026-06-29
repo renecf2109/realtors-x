@@ -10,13 +10,13 @@ A clean Next.js and Supabase starter for real estate agents. Agents can manage l
 - Public natural-language property search
 - Explainable matching by budget, location, bedrooms, bathrooms, type, and features
 - Buyer lead capture and lead dashboard
-- AI-assisted listing creation from natural-language descriptions
+- OpenAI-assisted listing creation from natural-language descriptions, with rule-based fallback
 - Excel, CSV, JSON, and text bulk listing imports
 - Multi-photo property galleries using Supabase Storage
 - Supabase Row Level Security (RLS)
 - Responsive Tailwind UI
 
-The assistant is deliberately keyless for the MVP: it parses buyer requests and ranks database results locally. This keeps it fast, deterministic, and free to run. A hosted language model can be added later without changing the listing or lead data model.
+The assistant can use OpenAI on the server for structured listing extraction, categorization, verification, and match explanations. If `OPENAI_API_KEY` is missing or an API call fails, the app falls back to the built-in rule-based parser so imports and chat do not crash.
 
 ## 1. Install
 
@@ -41,9 +41,10 @@ Copy `.env.example` to `.env.local` and fill in the values:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+OPENAI_API_KEY=your-openai-api-key
 ```
 
-The anon key is designed for browser use. RLS policies in `schema.sql` protect writes and private data. Never put your Supabase service-role key in a `NEXT_PUBLIC_` variable.
+The Supabase anon key is designed for browser use. `OPENAI_API_KEY` is server-only and must never be prefixed with `NEXT_PUBLIC_`. RLS policies in `schema.sql` protect writes and private data. Never put your Supabase service-role key in a `NEXT_PUBLIC_` variable.
 
 ## 4. Run locally
 
@@ -74,7 +75,7 @@ supabase/         Database schema and optional demo data
 - Replace the broad “Agents can view leads” policy with an office/team assignment model if multiple agencies share one Supabase project.
 - Add rate limiting and CAPTCHA to `/api/leads` before running paid traffic.
 - Add property images using a Supabase Storage bucket.
-- Run `npm run build` before deployment. Vercel can deploy the app directly; add both environment variables in the Vercel project settings.
+- Run `npm run build` before deployment. Vercel can deploy the app directly; add the Supabase variables and `OPENAI_API_KEY` in the Vercel project settings.
 
 ## Automatic Supabase migrations
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Check, Copy, Images, LinkIcon, Save, Sparkles, Video } from "lucide-react";
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { parseListingDescription, type ListingDraft } from "@/lib/listingParser";
+import type { ListingDraft } from "@/lib/listingParser";
 import type { PropertyInput } from "@/lib/types";
 import { formatListingPrice } from "@/lib/listingPrice";
 
@@ -23,23 +23,30 @@ export function PasteListingCreator({ userId }: { userId: string }) {
   const listingPath = saved ? `/listings/${saved.id}` : "";
   const fullLink = typeof window !== "undefined" && listingPath ? `${window.location.origin}${listingPath}` : listingPath;
 
-  function analyze() {
+  async function analyze() {
     if (!text.trim()) { setError("Paste the listing text first."); return; }
-    const parsed = parseListingDescription(text);
-    setDraft({
-      ...blankDraft,
-      ...parsed,
-      title: parsed.title || "",
-      location: parsed.location || "",
-      type: parsed.type || "property",
-      price_status: parsed.price ? null : "price_on_request",
-      bedrooms: parsed.bedrooms ?? 0,
-      bathrooms: parsed.bathrooms ?? 0,
-      size: parsed.size ?? 0,
-      availability: parsed.availability ?? "available"
-    });
-    setSaved(null);
-    setError("");
+    setBusy(true); setError("");
+    try {
+      const response = await fetch("/api/listings/parse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ description: text }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "The listing could not be analyzed.");
+      const parsed = result.draft as ListingDraft;
+      setDraft({
+        ...blankDraft,
+        ...parsed,
+        title: parsed.title || "",
+        location: parsed.location || "",
+        type: parsed.type || "property",
+        price_status: parsed.price ? null : parsed.price_status ?? "price_on_request",
+        bedrooms: parsed.bedrooms ?? 0,
+        bathrooms: parsed.bathrooms ?? 0,
+        size: parsed.size ?? 0,
+        availability: parsed.availability ?? "available"
+      });
+      setSaved(null);
+      setError(result.warning ?? "");
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "The listing could not be analyzed."); }
+    finally { setBusy(false); }
   }
 
   function update<K extends keyof ListingDraft>(key: K, value: ListingDraft[K]) { setDraft(current => ({ ...current, [key]: value })); }

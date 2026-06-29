@@ -28,7 +28,8 @@ export function ChatExperience() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "The search could not be completed.");
       if (data.conversation_id) setConversationId(data.conversation_id);
-      setMessages(value => [...value, { role: "assistant", text: data.reply || "I could not find a close match yet. Try changing the area or budget.", matches: data.matches ?? [] }]);
+      const warning = data.warning ? `\n\nNote: ${data.warning}` : "";
+      setMessages(value => [...value, { role: "assistant", text: `${data.reply || "I could not find a close match yet. Try changing the area or budget."}${warning}`, matches: data.matches ?? [] }]);
     } catch (error) { setMessages(value => [...value, { role: "assistant", text: error instanceof Error ? error.message : "Something went wrong. Please try again." }]); }
     finally { setLoading(false); }
   }

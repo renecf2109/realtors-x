@@ -1,4 +1,5 @@
 import type { ImportRowStatus } from "./types";
+import type { AIListingExtraction } from "./aiWorkbench";
 import { cleanListingNumber, normalizeListingStatus, normalizePropertyType, parseListingDescription } from "./listingParser";
 
 export type MappedListing = {
@@ -160,3 +161,37 @@ export function verifyImportRow(row: Record<string, unknown>, rowNumber: number,
 }
 
 export function markDuplicate(row: VerifiedImportRow): VerifiedImportRow { return { ...row, row_status: "duplicate_skipped", messages: [...row.messages, "Duplicate listing skipped"] }; }
+
+export function verifiedRowFromAI(row: Record<string, unknown>, rowNumber: number, ai: AIListingExtraction, source: "openai" | "rule_based", warning?: string): VerifiedImportRow {
+  const missing = ai.missing_required_fields.filter(Boolean);
+  const status = ai.listing_status || "";
+  const type = ai.property_type || "property";
+  const title = ai.title || [ai.project_name, ai.location, type].filter(Boolean).join(" ") || "";
+  const mapped: Partial<MappedListing> = {
+    title,
+    price: ai.price,
+    price_status: ai.price_status || (ai.price === null ? "price_on_request" : null),
+    location: ai.location || ai.project_name || title,
+    type,
+    availability: status,
+    bedrooms: ai.bedrooms ?? 0,
+    bathrooms: ai.bathrooms ?? 0,
+    size: ai.square_feet ?? 0,
+    description: ai.description,
+    features: ai.amenities,
+    images: ai.media_urls,
+    videos: ai.video_urls,
+    project_name: ai.project_name,
+    completion_date: ai.completion_date
+  };
+  const messages = [
+    source === "openai" ? `AI confidence: ${Math.round(ai.confidence_score * 100)}%` : warning,
+    ai.review_reason && `AI: ${ai.review_reason}`,
+    ...missing.map(field => `Required missing: ${field}`),
+    ...ai.skipped_optional_fields.map(field => `Optional skipped: ${field}`)
+  ].filter(Boolean) as string[];
+  if (!ai.safe_to_import || missing.length) return { row_number: rowNumber, raw_data: row, mapped_data: mapped, row_status: "required_missing", messages, duplicate_key: null };
+  if (!allowedStatuses.includes(status)) return { row_number: rowNumber, raw_data: row, mapped_data: mapped, row_status: "needs_review", messages: [...messages, `Review listing status: ${status}`], duplicate_key: null };
+  const duplicateKey = [mapped.title, mapped.location, mapped.price ?? mapped.price_status, mapped.type].map(value => String(value ?? "").toLowerCase()).join("|");
+  return { row_number: rowNumber, raw_data: row, mapped_data: mapped, row_status: messages.length ? "optional_skipped" : "imported", messages, duplicate_key: duplicateKey };
+}
