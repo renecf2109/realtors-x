@@ -89,6 +89,18 @@ function urlList(value: unknown) {
   });
 }
 
+function uniqueFeatures(values: string[]) {
+  const seen = new Set<string>();
+  const features: string[] = [];
+  for (const value of values) {
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    features.push(value);
+  }
+  return features;
+}
+
 export function parseListingDescription(text: string): ListingDraft {
   const normalized = normalizeText(text);
   const lower = normalized.toLowerCase();
@@ -113,10 +125,10 @@ export function parseListingDescription(text: string): ListingDraft {
   const availability = normalizeListingStatus(labeled(labels, fieldAliases.availability))
     ?? (["available", "reserved", "sold", "rented"] as const).find(value => lower.includes(value))
     ?? "available";
-  const features = Array.from(new Set([
+  const features = uniqueFeatures([
     ...splitList(labeled(labels, fieldAliases.features)),
     ...featureDictionary.filter(feature => lower.includes(feature))
-  ]));
+  ]);
   const price = cleanListingNumber(labeled(labels, fieldAliases.price)) ?? (priceMatch ? cleanListingNumber(priceMatch[1]) : undefined);
   const bedrooms = cleanListingNumber(labeled(labels, fieldAliases.bedrooms)) ?? (bedMatch ? Number(bedMatch[1]) : propertyType === "studio" ? 0 : undefined);
   const bathrooms = cleanListingNumber(labeled(labels, fieldAliases.bathrooms)) ?? (bathMatch ? Number(bathMatch[1]) : propertyType === "land" ? 0 : undefined);
